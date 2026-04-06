@@ -6,7 +6,59 @@ const { validationRules, handleValidationErrors } = require('../utils/helpers');
 
 const router = express.Router();
 
-// Register
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - password
+ *               - role
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: John
+ *               lastName:
+ *                 type: string
+ *                 example: Doe
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: TestPass123!
+ *               role:
+ *                 type: string
+ *                 enum: [student, entrepreneur, company, investor, mentor, admin]
+ *                 example: student
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 userId:
+ *                   type: string
+ *       400:
+ *         description: Validation error or email already exists
+ */
 router.post(
   '/register',
   validationRules.register,
@@ -14,10 +66,71 @@ router.post(
   authController.register
 );
 
-// Email verification
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify email with token
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
 router.post('/verify-email', authController.verifyEmail);
 
-// Login
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: TestPass123!
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post(
   '/login',
   validationRules.login,
@@ -25,10 +138,46 @@ router.post(
   authController.login
 );
 
-// Logout
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 router.post('/logout', authController.logout);
 
-// Forgot password
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ *       404:
+ *         description: User not found
+ */
 router.post(
   '/forgot-password',
   validationRules.forgotPassword,
@@ -36,7 +185,38 @@ router.post(
   authController.forgotPassword
 );
 
-// Reset password
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid or expired token
+ */
 router.post(
   '/reset-password',
   validationRules.resetPassword,
@@ -44,27 +224,87 @@ router.post(
   authController.resetPassword
 );
 
-// Get current user
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/me', authMiddleware, authController.getCurrentUser);
 
-// Google OAuth
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags:
+ *       - OAuth
+ *     responses:
+ *       307:
+ *         description: Redirect to Google OAuth
+ */
 router.get(
   '/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     tags:
+ *       - OAuth
+ *     responses:
+ *       307:
+ *         description: Redirect to application with token
+ */
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   authController.googleCallback
 );
 
-// Facebook OAuth
+/**
+ * @swagger
+ * /api/auth/facebook:
+ *   get:
+ *     summary: Initiate Facebook OAuth login
+ *     tags:
+ *       - OAuth
+ *     responses:
+ *       307:
+ *         description: Redirect to Facebook OAuth
+ */
 router.get(
   '/facebook',
   passport.authenticate('facebook', { scope: ['email'] })
 );
 
+/**
+ * @swagger
+ * /api/auth/facebook/callback:
+ *   get:
+ *     summary: Facebook OAuth callback
+ *     tags:
+ *       - OAuth
+ *     responses:
+ *       307:
+ *         description: Redirect to application with token
+ */
 router.get(
   '/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/login' }),

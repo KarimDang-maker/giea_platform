@@ -6,10 +6,12 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const rateLimit = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
 
 // Database and Config
 const { initializeFirestore } = require('./config/database');
 const configurePassport = require('./config/passport');
+const swaggerSpec = require('./config/swagger');
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -77,6 +79,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date() });
 });
 
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    url: '/api/swagger.json',
+  },
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'GIEA Platform API Docs',
+}));
+
+// Swagger JSON endpoint
+app.get('/api/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -87,9 +104,11 @@ app.get('/', (req, res) => {
     message: 'Welcome to GIEA Platform API',
     version: '1.0.0',
     database: 'Firebase Firestore',
+    documentation: 'http://localhost:5000/api/docs',
     routes: {
       auth: '/api/auth',
       users: '/api/users',
+      health: '/health',
     },
   });
 });
@@ -123,6 +142,8 @@ app.listen(PORT, () => {
   console.log(`📊 Database: Firebase Firestore`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📝 API: http://localhost:${PORT}`);
+  console.log(`📚 Swagger Docs: http://localhost:${PORT}/api/docs`);
+  console.log(`\n`);
 });
 
 module.exports = app;
