@@ -84,7 +84,6 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   swaggerOptions: {
     url: '/api/swagger.json',
   },
-  customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'GIEA Platform API Docs',
 }));
 
