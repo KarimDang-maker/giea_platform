@@ -86,15 +86,56 @@ router.post(
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: john@example.com
  *               token:
  *                 type: string
+ *                 example: abc123def456...
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid or expired token
+ *       404:
+ *         description: User not found
+ */
+router.post('/verify-email', authController.verifyEmail);
+
+/**
+ * @swagger
+ * /api/auth/verify-email-link:
+ *   get:
+ *     summary: Verify email via clickable link (from email)
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User email
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Verification token
  *     responses:
  *       200:
  *         description: Email verified successfully
  *       400:
  *         description: Invalid or expired token
+ *       404:
+ *         description: User not found
  */
-router.post('/verify-email', authController.verifyEmail);
+router.get('/verify-email-link', authController.verifyEmailLink);
 
 /**
  * @swagger

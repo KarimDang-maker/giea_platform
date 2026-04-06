@@ -13,7 +13,7 @@ class EmailService {
 
   // Send verification email
   async sendVerificationEmail(email, firstName, verificationToken) {
-    const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+    const verificationLink = `${process.env.CLIENT_URL}/api/auth/verify-email-link?email=${encodeURIComponent(email)}&token=${verificationToken}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,

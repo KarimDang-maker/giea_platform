@@ -32,7 +32,7 @@ exports.register = async (req, res) => {
     // Generate verification token
     const verificationToken = TokenService.generateVerificationToken();
     const hashedToken = TokenService.hashToken(verificationToken);
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days (extended from 24 hours)
 
     // Update user with verification token
     await User.update(user.email, {
@@ -60,40 +60,41 @@ exports.register = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { email, token } = req.body;
 
-    if (!token) {
-      return res.status(400).json({ message: 'Verification token is required' });
+    if (!email || !token) {
+      return res.status(400).json({ message: 'Email and verification token are required' });
     }
 
-    const hashedToken = TokenService.hashToken(token);
-
-    // Since Firestore doesn't have easy query capabilities for text search,
-    // we'll need to iterate through users to find the one with the token
-    // For production, consider using Algolia or similar
-    const admin = require('firebase-admin');
-    const db = admin.firestore();
+    // Get user by email
+    const user = await User.findByEmail(email.toLowerCase());
     
-    const snapshot = await db
-      .collection('users')
-      .where('emailVerificationToken', '==', hashedToken)
-      .where('emailVerificationExpire', '>', new Date())
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    const userDoc = snapshot.docs[0];
-    const userData = userDoc.data();
-    const user = new User(userData);
+    // Check if already verified
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
 
-    // Update user
+    // Verify token matches
+    const hashedToken = require('../services/token.service').hashToken(token);
+    
+    if (user.emailVerificationToken !== hashedToken) {
+      return res.status(400).json({ message: 'Invalid verification token' });
+    }
+
+    // Check if token expired
+    if (new Date() > user.emailVerificationExpire) {
+      return res.status(400).json({ message: 'Verification token has expired' });
+    }
+
+    // Update user as verified
     await User.update(user.email, {
       isVerified: true,
       emailVerifiedAt: new Date(),
-      emailVerificationToken: '',
+      emailVerificationToken: null,
       emailVerificationExpire: null,
     });
 
@@ -108,6 +109,148 @@ exports.verifyEmail = async (req, res) => {
   } catch (error) {
     console.error('Email verification error:', error);
     res.status(500).json({ message: 'Server error during email verification' });
+  }
+};
+
+// Handle email verification from clickable link in email
+exports.verifyEmailLink = async (req, res) => {
+  try {
+    const { email, token } = req.query;
+
+    if (!email || !token) {
+      return res.status(400).send(`
+        <html>
+          <head><title>Email Verification Failed</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #d32f2f;">Email Verification Failed</h1>
+            <p>Email and verification token are required.</p>
+            <a href="http://localhost:3000/login" style="color: #1976d2;">Go to Login</a>
+          </body>
+        </html>
+      `);
+    }
+
+    // Get user by email
+    const user = await User.findByEmail(email.toLowerCase());
+    
+    if (!user) {
+      return res.status(404).send(`
+        <html>
+          <head><title>User Not Found</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #d32f2f;">User Not Found</h1>
+            <p>No account found for this email.</p>
+            <a href="http://localhost:3000/register" style="color: #1976d2;">Create Account</a>
+          </body>
+        </html>
+      `);
+    }
+
+    // Check if already verified
+    if (user.isVerified) {
+      return res.send(`
+        <html>
+          <head><title>Email Already Verified</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #1976d2;">Email Already Verified</h1>
+            <p>Your email has already been verified.</p>
+            <a href="http://localhost:3000/login" style="color: #1976d2;">Go to Login</a>
+          </body>
+        </html>
+      `);
+    }
+
+    // Verify token matches
+    const TokenService = require('../services/token.service');
+    const hashedToken = TokenService.hashToken(token);
+    
+    console.log('Email from link:', email);
+    console.log('User email:', user.email);
+    console.log('Token received:', token.substring(0, 20) + '...');
+    console.log('Stored hashed token:', user.emailVerificationToken ? user.emailVerificationToken.substring(0, 20) + '...' : 'NOT SET');
+    console.log('Calculated hash:', hashedToken.substring(0, 20) + '...');
+    console.log('Token expiry:', user.emailVerificationExpire);
+    console.log('Current time:', new Date());
+    
+    if (user.emailVerificationToken !== hashedToken) {
+      console.error('Token mismatch!');
+      return res.status(400).send(`
+        <html>
+          <head><title>Invalid Token</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #d32f2f;">Invalid Verification Token</h1>
+            <p>The verification token is invalid or incorrect.</p>
+            <a href="http://localhost:3000/login" style="color: #1976d2;">Go to Login</a>
+          </body>
+        </html>
+      `);
+    }
+
+    // Check if token expired - convert to Date if needed
+    const expiryDate = user.emailVerificationExpire instanceof Date 
+      ? user.emailVerificationExpire 
+      : new Date(user.emailVerificationExpire);
+    
+    if (new Date() > expiryDate) {
+      console.error('Token expired!');
+      return res.status(400).send(`
+        <html>
+          <head><title>Token Expired</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #d32f2f;">Verification Token Expired</h1>
+            <p>Your verification token has expired. Please request a new one.</p>
+            <a href="http://localhost:3000/login" style="color: #1976d2;">Go to Login</a>
+          </body>
+        </html>
+      `);
+    }
+
+    // Update user as verified
+    await User.update(user.email, {
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+      emailVerificationToken: null,
+      emailVerificationExpire: null,
+    });
+
+    // Send welcome email
+    try {
+      const EmailService = require('../services/email.service');
+      await EmailService.sendWelcomeEmail(user.email, user.firstName);
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+    }
+
+    return res.send(`
+      <html>
+        <head><title>Email Verified Successfully</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1 style="color: #4caf50;">Email Verified Successfully!</h1>
+          <p>Your email has been verified. You can now log in.</p>
+          <a href="http://localhost:3000/login" style="
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4caf50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+          ">Go to Login</a>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Email verification link error:', error);
+    res.status(500).send(`
+      <html>
+        <head><title>Error</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1 style="color: #d32f2f;">Server Error</h1>
+          <p>An error occurred during email verification.</p>
+          <a href="http://localhost:3000/login" style="color: #1976d2;">Go to Login</a>
+        </body>
+      </html>
+    `);
   }
 };
 

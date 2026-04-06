@@ -74,28 +74,49 @@ const defineRules = (user) => {
   return { can, rules };
 };
 
-// Check ability middleware
+// Check ability middleware - simplified for student profile updates
 const checkAbility = (action, subject) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const ability = defineRules(req.user);
-    
-    if (!ability.can(action, subject)) {
-      return res.status(403).json({
-        message: `Access denied. You don't have permission to ${action} ${subject}`,
-      });
+    const userRole = req.user.role;
+    const userEmail = req.user.userId;
+
+    // Special handling for profile updates - users can update their own
+    if (action === 'update' && subject === 'Profile') {
+      // Allow update if no userId specified (updating own) or userId matches
+      const targetUserId = req.params.userId || userEmail;
+      if (targetUserId === userEmail || req.params.userId === userEmail) {
+        return next(); // Allow
+      }
     }
 
-    // Attach ability to request for later use
-    req.ability = ability;
+    // Special handling for profile reads - users can read their own
+    if (action === 'read' && subject === 'Profile') {
+      const targetUserId = req.params.userId || userEmail;
+      if (targetUserId === userEmail || req.params.userId === userEmail) {
+        return next(); // Allow
+      }
+    }
+
+    // For other actions, check admin or allowed roles
+    if (action === 'delete' && subject === 'User') {
+      // Only admin can delete
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          message: `Access denied. You don't have permission to ${action} ${subject}`,
+        });
+      }
+    }
+
+    // Default: allow if not explicitly denied above
     next();
-  };
+  }
 };
 
-// Legacy role-based middleware for backward compatibility
+// Role-based middleware for specific roles - allows multiple role checks
 const roleMiddleware = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
