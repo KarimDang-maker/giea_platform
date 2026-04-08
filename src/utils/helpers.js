@@ -11,10 +11,7 @@ const validationRules = {
     body('password')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage(
-        'Password must contain uppercase, lowercase, and number'
-      ),
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/), // At least one lowercase, uppercase, and digit
     body('role')
       .optional()
       .isIn(['student', 'entrepreneur', 'investor', 'mentor', 'company', 'admin'])
@@ -33,8 +30,7 @@ const validationRules = {
     body('newPassword')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage('Password must contain uppercase, lowercase, and number'),
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/), // At least one lowercase, uppercase, and digit
   ],
 
   // User validations
@@ -56,10 +52,7 @@ const validationRules = {
     body('newPassword')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage(
-        'Password must contain uppercase, lowercase, and number'
-      ),
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/), // At least one lowercase, uppercase, and digit
   ],
 };
 

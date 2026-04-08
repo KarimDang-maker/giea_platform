@@ -78,15 +78,20 @@ exports.verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Email already verified' });
     }
 
-    // Verify token matches
-    const hashedToken = require('../services/token.service').hashToken(token);
-    
-    if (user.emailVerificationToken !== hashedToken) {
+    // Verify token using built-in method
+    if (!TokenService.verifyHashedToken(token, user.emailVerificationToken)) {
       return res.status(400).json({ message: 'Invalid verification token' });
     }
 
     // Check if token expired
-    if (new Date() > user.emailVerificationExpire) {
+    let expireTime = user.emailVerificationExpire;
+    if (expireTime && typeof expireTime.toDate === 'function') {
+      expireTime = expireTime.toDate();
+    } else if (typeof expireTime === 'string') {
+      expireTime = new Date(expireTime);
+    }
+
+    if (new Date() > new Date(expireTime)) {
       return res.status(400).json({ message: 'Verification token has expired' });
     }
 
@@ -302,77 +307,180 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ 
+        message: 'Email is required',
+        error: 'Missing email field'
+      });
+    }
+
     const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
-      return res.status(404).json({ message: 'No user found with that email' });
+      // Don't reveal if email exists or not for security reasons
+      return res.json({ 
+        message: 'If an account with that email exists, a password reset link has been sent to it',
+        info: 'This message is shown regardless of whether the email exists'
+      });
     }
+
+    console.log('Processing password reset request for:', email);
 
     const resetToken = TokenService.generateResetToken();
     const hashedToken = TokenService.hashToken(resetToken);
     const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Update user with reset token
-    await User.update(user.email, {
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: tokenExpiry,
-    });
-
     try {
-      await EmailService.sendPasswordResetEmail(email, user.firstName, resetToken);
-    } catch (emailError) {
-      console.error('Error sending reset email:', emailError);
-      return res.status(500).json({ message: 'Error sending reset email' });
+      await User.update(user.email, {
+        resetPasswordToken: hashedToken,
+        resetPasswordExpire: tokenExpiry,
+      });
+    } catch (updateError) {
+      console.error('Error saving reset token:', updateError);
+      return res.status(500).json({ 
+        message: 'Error processing password reset request',
+        error: 'Database error'
+      });
     }
 
-    res.json({ message: 'Password reset link has been sent to your email' });
+    // Send password reset email
+    try {
+      await EmailService.sendPasswordResetEmail(email, user.firstName, resetToken);
+      console.log('Password reset email sent to:', email);
+    } catch (emailError) {
+      console.error('Error sending reset email:', emailError);
+      return res.status(500).json({ 
+        message: 'Error sending password reset email. Please try again later',
+        error: 'Email service error'
+      });
+    }
+
+    res.json({ 
+      message: 'Password reset link has been sent to your email. Please check your inbox and follow the link to reset your password',
+      success: true
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Server error during password reset request' });
+    res.status(500).json({ 
+      message: 'Server error during password reset request',
+      error: error.message
+    });
   }
 };
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { email, token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: 'Token and new password are required' });
+    // Validate input
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ 
+        message: 'Email, token, and new password are required',
+        error: 'Missing required fields'
+      });
     }
 
-    const hashedToken = TokenService.hashToken(token);
+    if (newPassword.length < 8) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters long',
+        error: 'Invalid password'
+      });
+    }
 
-    const admin = require('firebase-admin');
-    const db = admin.firestore();
+    // Find user
+    const user = await User.findByEmail(email.toLowerCase());
     
-    const snapshot = await db
-      .collection('users')
-      .where('resetPasswordToken', '==', hashedToken)
-      .where('resetPasswordExpire', '>', new Date())
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        error: 'User does not exist'
+      });
     }
 
-    const userDoc = snapshot.docs[0];
-    const userData = userDoc.data();
-    const user = new User(userData);
+    // Check if user has a reset token set
+    if (!user.resetPasswordToken) {
+      return res.status(400).json({ 
+        message: 'No password reset request found. Please request a password reset',
+        error: 'No reset token'
+      });
+    }
 
-    // Update password
-    user.password = newPassword;
-    await user.hashPassword();
+    // Verify token using built-in method
+    if (!TokenService.verifyHashedToken(token, user.resetPasswordToken)) {
+      console.error('Token verification failed for user:', email);
+      return res.status(400).json({ 
+        message: 'Invalid reset token',
+        error: 'Token mismatch'
+      });
+    }
 
-    await User.update(user.email, {
-      password: user.password,
-      resetPasswordToken: '',
-      resetPasswordExpire: null,
+    // Check if token expired - convert Firestore Timestamp to Date if needed
+    let expireTime = user.resetPasswordExpire;
+    if (expireTime && typeof expireTime.toDate === 'function') {
+      expireTime = expireTime.toDate();
+    } else if (typeof expireTime === 'string') {
+      expireTime = new Date(expireTime);
+    }
+    
+    if (new Date() > new Date(expireTime)) {
+      return res.status(400).json({ 
+        message: 'Reset token has expired. Please request a new password reset',
+        error: 'Token expired'
+      });
+    }
+
+    // Hash the new password
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password with hashed version
+    console.log('Updating password for user:', email);
+    try {
+      await User.update(user.email, {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpire: null,
+      });
+    } catch (updateError) {
+      console.error('Error updating password in DB:', updateError);
+      return res.status(500).json({ 
+        message: 'Error updating password. Please try again',
+        error: 'Database update failed'
+      });
+    }
+
+    // Verify the password was actually updated by fetching user again
+    const updatedUser = await User.findByEmail(email.toLowerCase());
+    if (!updatedUser) {
+      return res.status(500).json({ 
+        message: 'Error verifying password reset',
+        error: 'User verification failed'
+      });
+    }
+
+    // Verify new password can be compared
+    const passwordVerifies = await updatedUser.comparePassword(newPassword);
+    if (!passwordVerifies) {
+      console.error('Password verification failed after reset for user:', email);
+      return res.status(500).json({ 
+        message: 'Password reset failed. Please try again',
+        error: 'Password verification failed'
+      });
+    }
+
+    console.log('Password successfully reset for user:', email);
+
+    res.json({ 
+      message: 'Password has been reset successfully. You can now log in with your new password',
+      success: true
     });
-
-    res.json({ message: 'Password has been reset successfully' });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({ message: 'Server error during password reset' });
+    res.status(500).json({ 
+      message: 'Server error during password reset',
+      error: error.message
+    });
   }
 };
 
