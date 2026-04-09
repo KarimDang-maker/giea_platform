@@ -1,7 +1,7 @@
 const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
-const User = require('../models/user.model');
+const User = require('../modules/authentication/models/user.model');
 
 const configurePassport = (passport) => {
   // Local Strategy for email/password login

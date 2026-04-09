@@ -1,6 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/user.controller');
-const { authMiddleware } = require('../middleware/auth.middleware');
+const { authMiddleware } = require('../modules/authentication/middleware/auth.middleware');
 const { checkAbility, adminOnly } = require('../middleware/role.middleware');
 const { validationRules, handleValidationErrors } = require('../utils/helpers');
 

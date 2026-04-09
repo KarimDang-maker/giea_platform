@@ -1,4 +1,4 @@
-const User = require('../models/user.model');
+const User = require('../modules/authentication/models/user.model');
 const { validationResult } = require('express-validator');
 const admin = require('firebase-admin');
 

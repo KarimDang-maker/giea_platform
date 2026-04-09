@@ -1,5 +1,36 @@
 # GIEA Platform - API Specification
 
+## Project Structure - Modular Architecture
+
+The GIEA Platform uses a **modular folder structure** to enable better team collaboration and scalability. Each module represents a distinct feature area:
+
+```
+src/
+├── modules/
+│   ├── authentication/          # Authentication module (Login, Register, Token Management)
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── services/
+│   │   └── index.js
+│   ├── [other-modules]/         # Add more modules as needed
+│   └── ...
+├── config/                      # Shared configuration
+├── middleware/                  # Shared middleware
+├── utils/                       # Shared utilities
+└── index.js                     # Main application file
+```
+
+### Adding New Modules
+When adding a new feature module:
+1. Create a folder inside `src/modules/[module-name]`
+2. Follow the same structure: `controllers/`, `routes/`, `middleware/`, `models/`, `services/`
+3. Create an `index.js` file to export the module
+4. Update `src/index.js` to register the module's routes
+
+---
+
 ## Table of Contents
 1. [Authentication](#authentication)
 2. [User Management](#user-management)

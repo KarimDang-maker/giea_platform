@@ -13,8 +13,8 @@ const { initializeFirestore } = require('./config/database');
 const configurePassport = require('./config/passport');
 const swaggerSpec = require('./config/swagger');
 
-// Routes
-const authRoutes = require('./routes/auth.routes');
+// Routes - Modules
+const authRoutes = require('./modules/authentication/routes');
 const userRoutes = require('./routes/user.routes');
 
 // Utils
