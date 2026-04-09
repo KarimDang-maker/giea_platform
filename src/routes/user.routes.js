@@ -3,6 +3,7 @@ const userController = require('../controllers/user.controller');
 const { authMiddleware } = require('../modules/authentication/middleware/auth.middleware');
 const { checkAbility, adminOnly } = require('../middleware/role.middleware');
 const { validationRules, handleValidationErrors } = require('../utils/helpers');
+const upload = require('../config/multer');
 
 const router = express.Router();
 
@@ -109,6 +110,7 @@ router.put(
 router.post(
   '/avatar',
   checkAbility('update', 'Profile'),
+  upload.single('avatar'),
   userController.uploadAvatar
 );
 
@@ -238,6 +240,296 @@ router.delete(
   '/deactivate',
   adminOnly,
   userController.deactivateAccount
+);
+
+// ========== SKILLS ROUTES ==========
+
+/**
+ * @swagger
+ * /api/users/skills:
+ *   get:
+ *     summary: Get all user skills
+ *     tags:
+ *       - Skills
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of skills
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 skills:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       level:
+ *                         type: string
+ *                       yearsOf:
+ *                         type: number
+ *                       category:
+ *                         type: string
+ *                 total:
+ *                   type: number
+ */
+router.get(
+  '/skills',
+  checkAbility('read', 'Profile'),
+  userController.getSkills
+);
+
+/**
+ * @swagger
+ * /api/users/skills:
+ *   post:
+ *     summary: Add a new skill
+ *     tags:
+ *       - Skills
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: JavaScript
+ *               level:
+ *                 type: string
+ *                 enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+ *                 example: Expert
+ *               yearsOf:
+ *                 type: number
+ *                 example: 5
+ *               category:
+ *                 type: string
+ *                 example: Programming
+ *     responses:
+ *       201:
+ *         description: Skill added successfully
+ */
+router.post(
+  '/skills',
+  checkAbility('update', 'Profile'),
+  userController.addSkill
+);
+
+/**
+ * @swagger
+ * /api/users/skills/{skillId}:
+ *   put:
+ *     summary: Update a skill
+ *     tags:
+ *       - Skills
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: skillId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               level:
+ *                 type: string
+ *               yearsOf:
+ *                 type: number
+ *               category:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Skill updated successfully
+ */
+router.put(
+  '/skills/:skillId',
+  checkAbility('update', 'Profile'),
+  userController.updateSkill
+);
+
+/**
+ * @swagger
+ * /api/users/skills/{skillId}:
+ *   delete:
+ *     summary: Remove a skill
+ *     tags:
+ *       - Skills
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: skillId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Skill removed successfully
+ */
+router.delete(
+  '/skills/:skillId',
+  checkAbility('update', 'Profile'),
+  userController.removeSkill
+);
+
+// ========== DOCUMENTS ROUTES ==========
+
+/**
+ * @swagger
+ * /api/users/documents:
+ *   get:
+ *     summary: Get all user documents
+ *     tags:
+ *       - Documents
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of documents
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 documents:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       type:
+ *                         type: string
+ *                       url:
+ *                         type: string
+ *                       uploadedAt:
+ *                         type: string
+ *                       fileSize:
+ *                         type: number
+ *                 total:
+ *                   type: number
+ */
+router.get(
+  '/documents',
+  checkAbility('read', 'Profile'),
+  userController.getDocuments
+);
+
+/**
+ * @swagger
+ * /api/users/documents:
+ *   post:
+ *     summary: Upload a document
+ *     tags:
+ *       - Documents
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               documentType:
+ *                 type: string
+ *                 example: resume
+ *     responses:
+ *       201:
+ *         description: Document uploaded successfully
+ */
+router.post(
+  '/documents',
+  checkAbility('update', 'Profile'),
+  upload.single('file'),
+  userController.uploadDocument
+);
+
+/**
+ * @swagger
+ * /api/users/documents/{documentId}:
+ *   delete:
+ *     summary: Remove a document
+ *     tags:
+ *       - Documents
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Document removed successfully
+ */
+router.delete(
+  '/documents/:documentId',
+  checkAbility('update', 'Profile'),
+  userController.removeDocument
+);
+
+/**
+ * @swagger
+ * /api/users/documents/{documentId}:
+ *   put:
+ *     summary: Update document information
+ *     tags:
+ *       - Documents
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Document info updated successfully
+ */
+router.put(
+  '/documents/:documentId',
+  checkAbility('update', 'Profile'),
+  userController.updateDocumentInfo
 );
 
 module.exports = router;

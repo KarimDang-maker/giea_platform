@@ -32,6 +32,14 @@ class User {
       specialization: '',
       yearsOfExperience: 0,
     };
+
+    // Skills & Interests
+    this.skills = data.skills || [];
+    // Format: [{ id: 'skill-1', name: 'JavaScript', level: 'Expert', yearsOf: 3, category: 'Programming' }, ...]
+
+    // Documents
+    this.documents = data.documents || [];
+    // Format: [{ id: 'doc-1', name: 'Resume', type: 'resume', url: '...', uploadedAt: Date, fileName: '...' }, ...]
     
     // Preferences
     this.preferences = data.preferences || {
@@ -110,6 +118,8 @@ class User {
         googleId: this.googleId,
         facebookId: this.facebookId,
         profile: this.profile,
+        skills: this.skills,
+        documents: this.documents,
         preferences: this.preferences,
         resetPasswordToken: this.resetPasswordToken,
         resetPasswordExpire: this.resetPasswordExpire,

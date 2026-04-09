@@ -214,3 +214,260 @@ exports.deactivateAccount = async (req, res) => {
     res.status(500).json({ message: 'Server error deactivating account' });
   }
 };
+
+// ========== SKILLS MANAGEMENT ==========
+
+exports.addSkill = async (req, res) => {
+  try {
+    const { name, level, yearsOf, category } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Skill name is required' });
+    }
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const skill = {
+      id: `skill-${Date.now()}`,
+      name,
+      level: level || 'Intermediate', // 'Beginner', 'Intermediate', 'Advanced', 'Expert'
+      yearsOf: yearsOf || 0,
+      category: category || 'Other',
+      addedAt: new Date(),
+    };
+
+    const skills = [...(user.skills || []), skill];
+    await User.update(user.email, { skills });
+
+    res.status(201).json({
+      message: 'Skill added successfully',
+      skill,
+    });
+  } catch (error) {
+    console.error('Add skill error:', error);
+    res.status(500).json({ message: 'Server error adding skill' });
+  }
+};
+
+exports.updateSkill = async (req, res) => {
+  try {
+    const { skillId } = req.params;
+    const { name, level, yearsOf, category } = req.body;
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const skillIndex = user.skills.findIndex((s) => s.id === skillId);
+    if (skillIndex === -1) {
+      return res.status(404).json({ message: 'Skill not found' });
+    }
+
+    const updatedSkill = { ...user.skills[skillIndex] };
+    if (name) updatedSkill.name = name;
+    if (level) updatedSkill.level = level;
+    if (yearsOf !== undefined) updatedSkill.yearsOf = yearsOf;
+    if (category) updatedSkill.category = category;
+    updatedSkill.updatedAt = new Date();
+
+    const skills = [...user.skills];
+    skills[skillIndex] = updatedSkill;
+
+    await User.update(user.email, { skills });
+
+    res.json({
+      message: 'Skill updated successfully',
+      skill: updatedSkill,
+    });
+  } catch (error) {
+    console.error('Update skill error:', error);
+    res.status(500).json({ message: 'Server error updating skill' });
+  }
+};
+
+exports.removeSkill = async (req, res) => {
+  try {
+    const { skillId } = req.params;
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const skills = user.skills.filter((s) => s.id !== skillId);
+
+    await User.update(user.email, { skills });
+
+    res.json({
+      message: 'Skill removed successfully',
+    });
+  } catch (error) {
+    console.error('Remove skill error:', error);
+    res.status(500).json({ message: 'Server error removing skill' });
+  }
+};
+
+exports.getSkills = async (req, res) => {
+  try {
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      skills: user.skills || [],
+      total: (user.skills || []).length,
+    });
+  } catch (error) {
+    console.error('Get skills error:', error);
+    res.status(500).json({ message: 'Server error retrieving skills' });
+  }
+};
+
+// ========== DOCUMENTS MANAGEMENT ==========
+
+exports.uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const { documentType } = req.body;
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Upload to Firebase Storage
+    const bucket = admin.storage().bucket();
+    const fileName = `documents/${user.email}/${documentType || 'document'}-${Date.now()}-${req.file.originalname}`;
+    const file = bucket.file(fileName);
+
+    await file.save(req.file.buffer, {
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+    });
+
+    // Generate permanent signed URL (longer expiration)
+    const [downloadURL] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+    });
+
+    const document = {
+      id: `doc-${Date.now()}`,
+      name: req.file.originalname.split('.')[0], // Filename without extension
+      type: documentType || 'document', // 'resume', 'certificate', 'portfolio', etc.
+      url: downloadURL,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
+      firebaseStoragePath: fileName,
+      uploadedAt: new Date(),
+    };
+
+    const documents = [...(user.documents || []), document];
+    await User.update(user.email, { documents });
+
+    res.status(201).json({
+      message: 'Document uploaded successfully',
+      document,
+    });
+  } catch (error) {
+    console.error('Upload document error:', error);
+    res.status(500).json({ message: 'Server error uploading document' });
+  }
+};
+
+exports.removeDocument = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const document = user.documents.find((d) => d.id === documentId);
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    // Delete from Firebase Storage
+    try {
+      const bucket = admin.storage().bucket();
+      await bucket.file(document.firebaseStoragePath).delete();
+    } catch (storageError) {
+      console.warn('Warning: Could not delete file from storage:', storageError);
+      // Don't fail the request, just log warning
+    }
+
+    const documents = user.documents.filter((d) => d.id !== documentId);
+    await User.update(user.email, { documents });
+
+    res.json({
+      message: 'Document removed successfully',
+    });
+  } catch (error) {
+    console.error('Remove document error:', error);
+    res.status(500).json({ message: 'Server error removing document' });
+  }
+};
+
+exports.getDocuments = async (req, res) => {
+  try {
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      documents: user.documents || [],
+      total: (user.documents || []).length,
+    });
+  } catch (error) {
+    console.error('Get documents error:', error);
+    res.status(500).json({ message: 'Server error retrieving documents' });
+  }
+};
+
+exports.updateDocumentInfo = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const { name, type } = req.body;
+
+    const user = await User.findByEmail(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const documentIndex = user.documents.findIndex((d) => d.id === documentId);
+    if (documentIndex === -1) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    const updatedDocument = { ...user.documents[documentIndex] };
+    if (name) updatedDocument.name = name;
+    if (type) updatedDocument.type = type;
+    updatedDocument.updatedAt = new Date();
+
+    const documents = [...user.documents];
+    documents[documentIndex] = updatedDocument;
+
+    await User.update(user.email, { documents });
+
+    res.json({
+      message: 'Document info updated successfully',
+      document: updatedDocument,
+    });
+  } catch (error) {
+    console.error('Update document info error:', error);
+    res.status(500).json({ message: 'Server error updating document info' });
+  }
+};
