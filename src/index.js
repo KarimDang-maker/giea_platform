@@ -68,6 +68,9 @@ app.use(passport.session());
 const limiter = rateLimit(rateLimitConfig);
 app.use('/api/auth/', limiter);
 
+// Middleware - Static Files (Public folder)
+app.use(express.static('src/public'));
+
 // Response logging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
@@ -77,6 +80,11 @@ app.use((req, res, next) => {
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date() });
+});
+
+// Auth Callback Route - Serve HTML page for OAuth callbacks
+app.get('/auth-callback', (req, res) => {
+  res.sendFile('public/auth-callback.html', { root: __dirname });
 });
 
 // Swagger Documentation
