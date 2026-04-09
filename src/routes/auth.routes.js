@@ -319,37 +319,4 @@ router.get(
   authController.googleCallback
 );
 
-/**
- * @swagger
- * /api/auth/facebook:
- *   get:
- *     summary: Initiate Facebook OAuth login
- *     tags:
- *       - OAuth
- *     responses:
- *       307:
- *         description: Redirect to Facebook OAuth
- */
-router.get(
-  '/facebook',
-  passport.authenticate('facebook', { scope: ['email'] })
-);
-
-/**
- * @swagger
- * /api/auth/facebook/callback:
- *   get:
- *     summary: Facebook OAuth callback
- *     tags:
- *       - OAuth
- *     responses:
- *       307:
- *         description: Redirect to application with token
- */
-router.get(
-  '/facebook/callback',
-  passport.authenticate('facebook', { failureRedirect: '/login' }),
-  authController.facebookCallback
-);
-
 module.exports = router;

@@ -59,36 +59,45 @@ exports.uploadAvatar = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Upload to Firebase Storage
-    const bucket = admin.storage().bucket();
-    const fileName = `avatars/${user.email}-${Date.now()}-${req.file.originalname}`;
-    const file = bucket.file(fileName);
+    try {
+      // Upload to Firebase Storage
+      const bucket = admin.storage().bucket();
+      const fileName = `avatars/${user.email}-${Date.now()}-${req.file.originalname}`;
+      const file = bucket.file(fileName);
 
-    await file.save(req.file.buffer, {
-      metadata: {
-        contentType: req.file.mimetype,
-      },
-    });
+      await file.save(req.file.buffer, {
+        metadata: {
+          contentType: req.file.mimetype,
+        },
+      });
 
-    const [downloadURL] = await file.getSignedUrl({
-      version: 'v4',
-      action: 'read',
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes public URL validity
-    });
+      const [downloadURL] = await file.getSignedUrl({
+        version: 'v4',
+        action: 'read',
+        expires: Date.now() + 15 * 60 * 1000, // 15 minutes public URL validity
+      });
 
-    // Update user with new avatar
-    await User.update(user.email, {
-      avatar: downloadURL,
-      firebaseStoragePath: fileName,
-    });
+      // Update user with new avatar
+      const updatedUser = await User.update(user.email, {
+        avatar: downloadURL,
+        firebaseStoragePath: fileName,
+      });
 
-    res.json({
-      message: 'Avatar uploaded successfully',
-      avatar: downloadURL,
-    });
+      if (!updatedUser) {
+        return res.status(500).json({ message: 'Failed to update user profile' });
+      }
+
+      res.json({
+        message: 'Avatar uploaded successfully',
+        avatar: downloadURL,
+      });
+    } catch (firebaseError) {
+      console.error('Firebase storage error:', firebaseError);
+      throw firebaseError;
+    }
   } catch (error) {
-    console.error('Upload avatar error:', error);
-    res.status(500).json({ message: 'Server error uploading avatar' });
+    console.error('Upload avatar error:', error.message, error);
+    res.status(500).json({ message: 'Server error uploading avatar', error: error.message });
   }
 };
 
@@ -262,6 +271,11 @@ exports.updateSkill = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Check if skills array exists
+    if (!user.skills || !Array.isArray(user.skills)) {
+      return res.status(404).json({ message: 'Skill not found' });
+    }
+
     const skillIndex = user.skills.findIndex((s) => s.id === skillId);
     if (skillIndex === -1) {
       return res.status(404).json({ message: 'Skill not found' });
@@ -296,6 +310,11 @@ exports.removeSkill = async (req, res) => {
     const user = await User.findByEmail(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if skills array exists
+    if (!user.skills || !Array.isArray(user.skills)) {
+      return res.status(404).json({ message: 'Skill not found' });
     }
 
     const skills = user.skills.filter((s) => s.id !== skillId);
@@ -394,6 +413,11 @@ exports.removeDocument = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Check if documents array exists
+    if (!user.documents || !Array.isArray(user.documents)) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
     const document = user.documents.find((d) => d.id === documentId);
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
@@ -445,6 +469,11 @@ exports.updateDocumentInfo = async (req, res) => {
     const user = await User.findByEmail(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if documents array exists
+    if (!user.documents || !Array.isArray(user.documents)) {
+      return res.status(404).json({ message: 'Document not found' });
     }
 
     const documentIndex = user.documents.findIndex((d) => d.id === documentId);

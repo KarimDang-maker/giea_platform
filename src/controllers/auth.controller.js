@@ -518,21 +518,4 @@ exports.googleCallback = async (req, res) => {
   }
 };
 
-exports.facebookCallback = async (req, res) => {
-  try {
-    const user = req.user;
-    const token = TokenService.generateToken(user.email, user.role);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.redirect(`${process.env.CLIENT_URL}/auth-callback?token=${token}`);
-  } catch (error) {
-    console.error('Facebook callback error:', error);
-    res.redirect(`${process.env.CLIENT_URL}/login?error=authentication_failed`);
-  }
-};

@@ -1,6 +1,5 @@
 const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
 const User = require('../modules/authentication/models/user.model');
 
 const configurePassport = (passport) => {
@@ -58,41 +57,6 @@ const configurePassport = (passport) => {
               lastName: profile.name.familyName,
               email: profile.emails[0].value,
               avatar: profile.photos[0]?.value,
-              isVerified: true,
-            });
-            await user.save();
-          }
-
-          return done(null, user);
-        } catch (error) {
-          return done(error);
-        }
-      }
-    )
-  );
-
-  // Facebook OAuth Strategy
-  passport.use(
-    'facebook',
-    new FacebookStrategy(
-      {
-        clientID: process.env.FACEBOOK_APP_ID,
-        clientSecret: process.env.FACEBOOK_APP_SECRET,
-        callbackURL: process.env.FACEBOOK_CALLBACK_URL,
-        profileFields: ['id', 'displayName', 'email', 'picture'],
-      },
-      async (accessToken, refreshToken, profile, done) => {
-        try {
-          let user = await User.findByFacebookId(profile.id);
-
-          if (!user) {
-            const [firstName, lastName] = profile.displayName.split(' ');
-            user = new User({
-              facebookId: profile.id,
-              firstName: firstName || 'Facebook',
-              lastName: lastName || 'User',
-              email: profile.emails?.[0]?.value,
-              avatar: profile.photos?.[0]?.value,
               isVerified: true,
             });
             await user.save();

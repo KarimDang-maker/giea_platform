@@ -21,7 +21,6 @@ class User {
     
     // OAuth IDs
     this.googleId = data.googleId || '';
-    this.facebookId = data.facebookId || '';
     
     // Profile
     this.profile = data.profile || {
@@ -116,7 +115,6 @@ class User {
         emailVerifiedAt: this.emailVerifiedAt,
         phoneVerifiedAt: this.phoneVerifiedAt,
         googleId: this.googleId,
-        facebookId: this.facebookId,
         profile: this.profile,
         skills: this.skills,
         documents: this.documents,
@@ -190,26 +188,6 @@ class User {
       return new User(snapshot.docs[0].data());
     } catch (error) {
       throw new Error(`Error finding user by Google ID: ${error.message}`);
-    }
-  }
-
-  // Static method: Find by Facebook ID
-  static async findByFacebookId(facebookId) {
-    try {
-      const db = admin.firestore();
-      const snapshot = await db
-        .collection(USERS_COLLECTION)
-        .where('facebookId', '==', facebookId)
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) {
-        return null;
-      }
-
-      return new User(snapshot.docs[0].data());
-    } catch (error) {
-      throw new Error(`Error finding user by Facebook ID: ${error.message}`);
     }
   }
 
