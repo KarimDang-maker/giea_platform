@@ -115,6 +115,53 @@ const options = {
             },
           },
         },
+        CompanyPage: {
+          type: 'object',
+          required: ['idUser', 'name', 'description', 'secteurActivite', 'localisation'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            idUser: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'Ma Super Entreprise' },
+            description: { type: 'string', example: 'Description de l\'entreprise' },
+            secteurActivite: { type: 'string', example: 'Technologie' },
+            localisation: { type: 'string', example: 'Paris, France' },
+            logoUrl: { type: 'string', format: 'uri' },
+            coverUrl: { type: 'string', format: 'uri' },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true },
+            isDeleted: { type: 'boolean', readOnly: true },
+          },
+        },
+        CompanyNews: {
+          type: 'object',
+          required: ['companyPageId', 'title', 'content'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            companyPageId: { type: 'string' },
+            title: { type: 'string', example: 'Nouvelle levée de fonds' },
+            content: { type: 'string', example: 'Nous avons levé 1M€...' },
+            imageUrl: { type: 'string', format: 'uri' },
+            publishedAt: { type: 'string', format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true },
+            isDeleted: { type: 'boolean', readOnly: true },
+          },
+        },
+        CompanyService: {
+          type: 'object',
+          required: ['companyPageId', 'name', 'description'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            companyPageId: { type: 'string' },
+            name: { type: 'string', example: 'Développement Web' },
+            description: { type: 'string', example: 'Création de sites internet sur mesure' },
+            price: { type: 'number', example: 1500 },
+            isAvailable: { type: 'boolean', default: true },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true },
+            isDeleted: { type: 'boolean', readOnly: true },
+          },
+        },
       },
     },
     security: [
@@ -123,7 +170,10 @@ const options = {
       },
     ],
   },
-  apis: [`${__dirname}/../routes/*.js`],
+  apis: [
+    `${__dirname}/../routes/*.js`,
+    `${__dirname}/../modules/marketplace/routes/*.js`
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

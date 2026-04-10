@@ -15,6 +15,7 @@ const swaggerSpec = require('./config/swagger');
 
 // Routes - Modules
 const authRoutes = require('./modules/authentication/routes');
+const marketplaceRoutes = require('./modules/marketplace');
 const userRoutes = require('./routes/user.routes');
 
 // Utils
@@ -95,6 +96,7 @@ app.get('/api/swagger.json', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/users', userRoutes);
 
 // Welcome route
@@ -106,6 +108,7 @@ app.get('/', (req, res) => {
     documentation: 'http://localhost:5000/api/docs',
     routes: {
       auth: '/api/auth',
+      marketplace: '/api/marketplace',
       users: '/api/users',
       health: '/health',
     },
