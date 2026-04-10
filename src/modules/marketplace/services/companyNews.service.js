@@ -3,7 +3,10 @@ const BaseService = require('./base.service');
 class CompanyNewsService extends BaseService {
     constructor() {
         super('companyNews');
-        this.pagesCollection = this.db.collection('companyPages');
+    }
+
+    get pagesCollection() {
+        return this.db.collection('companyPages');
     }
 
     async create(data) {

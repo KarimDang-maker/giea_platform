@@ -4,9 +4,18 @@ const { admin } = require('../../../config/database');
 class CompanyPageService extends BaseService {
     constructor() {
         super('companyPages');
-        this.newsCollection = this.db.collection('companyNews');
-        this.servicesCollection = this.db.collection('companyServices');
-        this.usersCollection = this.db.collection('users');
+    }
+
+    get newsCollection() {
+        return this.db.collection('companyNews');
+    }
+
+    get servicesCollection() {
+        return this.db.collection('companyServices');
+    }
+
+    get usersCollection() {
+        return this.db.collection('users');
     }
 
     /**

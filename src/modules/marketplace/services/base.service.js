@@ -2,8 +2,15 @@ const { admin } = require('../../../config/database');
 
 class BaseService {
     constructor(collectionName) {
-        this.db = admin.firestore();
-        this.collection = this.db.collection(collectionName);
+        this.collectionName = collectionName;
+    }
+
+    get db() {
+        return admin.firestore();
+    }
+
+    get collection() {
+        return this.db.collection(this.collectionName);
     }
 
     /**
