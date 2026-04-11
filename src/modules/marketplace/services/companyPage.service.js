@@ -24,6 +24,7 @@ class CompanyPageService extends BaseService {
     async create(data) {
         const userDoc = await this.usersCollection.doc(data.idUser).get();
         if (!userDoc.exists) {
+        
             throw new Error('Utilisateur non trouvé');
         }
         return super.create(data);
