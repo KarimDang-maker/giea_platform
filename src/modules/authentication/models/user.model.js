@@ -1,10 +1,13 @@
-const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
 
-const USERS_COLLECTION = 'users';
-
+/**
+ * User Data Model - Data only (no database operations)
+ * Purpose: Represent user data with validation and methods
+ * Database operations are handled by UserRepository
+ */
 class User {
   constructor(data = {}) {
+    // Basic Info
     this.id = data.id || '';
     this.firstName = data.firstName || '';
     this.lastName = data.lastName || '';
@@ -32,6 +35,10 @@ class User {
       specialization: '',
       yearsOfExperience: 0,
     };
+
+    // Skills & Documents
+    this.skills = data.skills || [];
+    this.documents = data.documents || [];
     
     // Preferences
     this.preferences = data.preferences || {
@@ -58,7 +65,10 @@ class User {
     this.updatedAt = data.updatedAt || new Date();
   }
 
-  // Hash password before saving
+  /**
+   * Hash password using bcrypt
+   * Should be called from AuthService or UserRepository
+   */
   async hashPassword() {
     if (this.password) {
       const salt = await bcrypt.genSalt(10);
@@ -66,12 +76,16 @@ class User {
     }
   }
 
-  // Compare passwords
+  /**
+   * Compare password with stored hash
+   */
   async comparePassword(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
   }
 
-  // Get public profile (exclude sensitive data)
+  /**
+   * Get public profile (exclude sensitive data)
+   */
   getPublicProfile() {
     const profile = { ...this };
     delete profile.password;
@@ -82,199 +96,11 @@ class User {
     return profile;
   }
 
-  // Save user to Firestore
-  async save() {
-    try {
-      const db = admin.firestore();
-      const userRef = db.collection(USERS_COLLECTION).doc(this.email);
-      
-      // Hash password if it's new or changed
-      if (this.password && !this.password.startsWith('$2')) {
-        await this.hashPassword();
-      }
-
-      this.updatedAt = new Date();
-
-      const userData = {
-        id: this.email,
-        firstName: this.firstName,
-        lastName: this.lastName,
-        email: this.email,
-        password: this.password,
-        phone: this.phone,
-        avatar: this.avatar,
-        role: this.role,
-        isVerified: this.isVerified,
-        emailVerifiedAt: this.emailVerifiedAt,
-        phoneVerifiedAt: this.phoneVerifiedAt,
-        googleId: this.googleId,
-        facebookId: this.facebookId,
-        profile: this.profile,
-        preferences: this.preferences,
-        resetPasswordToken: this.resetPasswordToken,
-        resetPasswordExpire: this.resetPasswordExpire,
-        emailVerificationToken: this.emailVerificationToken,
-        emailVerificationExpire: this.emailVerificationExpire,
-        lastLogin: this.lastLogin,
-        isActive: this.isActive,
-        firebaseStoragePath: this.firebaseStoragePath,
-        createdAt: this.createdAt,
-        updatedAt: this.updatedAt,
-      };
-
-      await userRef.set(userData, { merge: true });
-      this.id = this.email;
-      return this;
-    } catch (error) {
-      throw new Error(`Error saving user: ${error.message}`);
-    }
-  }
-
-  // Static method: Find user by email
-  static async findByEmail(email) {
-    try {
-      const db = admin.firestore();
-      const userRef = db.collection(USERS_COLLECTION).doc(email.toLowerCase());
-      const doc = await userRef.get();
-
-      if (!doc.exists) {
-        return null;
-      }
-
-      return new User(doc.data());
-    } catch (error) {
-      throw new Error(`Error finding user: ${error.message}`);
-    }
-  }
-
-  // Static method: Find user by ID (email)
-  static async findById(id) {
-    return this.findByEmail(id);
-  }
-
-  // Static method: Create new user
-  static async create(userData) {
-    try {
-      const user = new User(userData);
-      await user.save();
-      return user;
-    } catch (error) {
-      throw new Error(`Error creating user: ${error.message}`);
-    }
-  }
-
-  // Static method: Find by Google ID
-  static async findByGoogleId(googleId) {
-    try {
-      const db = admin.firestore();
-      const snapshot = await db
-        .collection(USERS_COLLECTION)
-        .where('googleId', '==', googleId)
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) {
-        return null;
-      }
-
-      return new User(snapshot.docs[0].data());
-    } catch (error) {
-      throw new Error(`Error finding user by Google ID: ${error.message}`);
-    }
-  }
-
-  // Static method: Find by Facebook ID
-  static async findByFacebookId(facebookId) {
-    try {
-      const db = admin.firestore();
-      const snapshot = await db
-        .collection(USERS_COLLECTION)
-        .where('facebookId', '==', facebookId)
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) {
-        return null;
-      }
-
-      return new User(snapshot.docs[0].data());
-    } catch (error) {
-      throw new Error(`Error finding user by Facebook ID: ${error.message}`);
-    }
-  }
-
-  // Static method: Search users
-  static async search(query = {}, skip = 0, limit = 20) {
-    try {
-      const db = admin.firestore();
-      let queryRef = db.collection(USERS_COLLECTION);
-
-      // Add filters based on query
-      if (query.role) {
-        queryRef = queryRef.where('role', '==', query.role);
-      }
-
-      if (query.q) {
-        // For text search, we need to search multiple fields
-        // This is a simple implementation; for production use Algolia or similar
-        queryRef = queryRef
-          .where('firstName', '>=', query.q)
-          .where('firstName', '<', query.q + '\uf8ff');
-      }
-
-      // Get total count
-      const countSnapshot = await queryRef.count().get();
-      const total = countSnapshot.data().count;
-
-      // Get paginated results
-      let snapshot = await queryRef
-        .offset(skip)
-        .limit(limit)
-        .get();
-
-      const users = [];
-      snapshot.forEach((doc) => {
-        users.push(new User(doc.data()).getPublicProfile());
-      });
-
-      return { data: users, total, skip, limit };
-    } catch (error) {
-      throw new Error(`Error searching users: ${error.message}`);
-    }
-  }
-
-  // Static method: Update user
-  static async update(email, updateData) {
-    try {
-      const db = admin.firestore();
-      updateData.updatedAt = new Date();
-
-      await db.collection(USERS_COLLECTION).doc(email.toLowerCase()).update(updateData);
-      return this.findByEmail(email);
-    } catch (error) {
-      throw new Error(`Error updating user: ${error.message}`);
-    }
-  }
-
-  // Static method: Delete user
-  static async delete(email) {
-    try {
-      const db = admin.firestore();
-      await db.collection(USERS_COLLECTION).doc(email.toLowerCase()).delete();
-      return true;
-    } catch (error) {
-      throw new Error(`Error deleting user: ${error.message}`);
-    }
-  }
-
-  // Check if email exists
-  static async emailExists(email) {
-    try {
-      const user = await this.findByEmail(email);
-      return user !== null;
-    } catch (error) {
-      throw new Error(`Error checking email: ${error.message}`);
-    }
+  /**
+   * Serialize JSON (used for response)
+   */
+  toJSON() {
+    return this.getPublicProfile();
   }
 }
 
