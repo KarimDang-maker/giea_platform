@@ -14,8 +14,7 @@ const configurePassport = require('./config/passport');
 const swaggerSpec = require('./config/swagger');
 
 // Routes - Modules
-const authRoutes = require('./modules/authentication/routes');
-const userRoutes = require('./routes/user.routes');
+const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');

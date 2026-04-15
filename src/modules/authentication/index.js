@@ -3,5 +3,6 @@ module.exports = {
   controllers: require('./controllers'),
   middleware: require('./middleware'),
   models: require('./models'),
+  repositories: require('./repositories'),
   services: require('./services'),
 };

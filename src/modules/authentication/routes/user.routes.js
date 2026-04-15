@@ -1,9 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/user.controller');
-const { authMiddleware } = require('../modules/authentication/middleware/auth.middleware');
-const { checkAbility, adminOnly } = require('../middleware/role.middleware');
-const { validationRules, handleValidationErrors } = require('../utils/helpers');
-const upload = require('../config/multer');
+const { authMiddleware } = require('../middleware/auth.middleware');
+const upload = require('../../../config/multer');
 
 const router = express.Router();
 
@@ -29,18 +27,8 @@ router.use(authMiddleware);
  *     responses:
  *       200:
  *         description: User profile data
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       404:
- *         description: User not found
  */
-router.get(
-  '/profile/:userId',
-  checkAbility('read', 'Profile'),
-  userController.getUserById
-);
+router.get('/profile/:userId', userController.getUserById);
 
 /**
  * @swagger
@@ -64,29 +52,36 @@ router.get(
  *                 type: string
  *               phone:
  *                 type: string
- *               location:
- *                 type: string
  *               bio:
  *                 type: string
+ *                 description: Professional bio
+ *               company:
+ *                 type: string
+ *                 description: Company name
+ *               location:
+ *                 type: string
+ *                 description: Location/City
+ *               website:
+ *                 type: string
+ *                 description: Personal website or portfolio URL
+ *               specialization:
+ *                 type: string
+ *                 description: Area of specialization
+ *               yearsOfExperience:
+ *                 type: integer
+ *                 description: Years of professional experience
  *     responses:
  *       200:
  *         description: Profile updated successfully
- *       400:
- *         description: Validation error
  */
-router.put(
-  '/profile',
-  checkAbility('update', 'Profile'),
-  validationRules.updateProfile,
-  handleValidationErrors,
-  userController.updateProfile
-);
+router.put('/profile', userController.updateProfile);
 
 /**
  * @swagger
  * /api/users/avatar:
  *   post:
  *     summary: Upload user avatar
+ *     description: Upload avatar image in any format (JPEG, PNG, GIF, WebP, TIFF, BMP, SVG, etc.)
  *     tags:
  *       - Users
  *     security:
@@ -97,22 +92,24 @@ router.put(
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - avatar
  *             properties:
  *               avatar:
  *                 type: string
  *                 format: binary
+ *                 description: Image file (any image type accepted)
  *     responses:
  *       200:
  *         description: Avatar uploaded successfully
  *       400:
- *         description: Invalid file
+ *         description: Invalid file or no file uploaded
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Firebase storage error
  */
-router.post(
-  '/avatar',
-  checkAbility('update', 'Profile'),
-  upload.single('avatar'),
-  userController.uploadAvatar
-);
+router.post('/avatar', upload.single('avatar'), userController.uploadAvatar);
 
 /**
  * @swagger
@@ -130,21 +127,17 @@ router.post(
  *           schema:
  *             type: object
  *             properties:
- *               theme:
- *                 type: string
- *               notifications:
+ *               emailNotifications:
  *                 type: boolean
- *               language:
- *                 type: string
+ *               smsNotifications:
+ *                 type: boolean
+ *               privateProfile:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Preferences updated
  */
-router.put(
-  '/preferences',
-  checkAbility('update', 'Profile'),
-  userController.updatePreferences
-);
+router.put('/preferences', userController.updatePreferences);
 
 /**
  * @swagger
@@ -174,16 +167,8 @@ router.put(
  *     responses:
  *       200:
  *         description: Password changed successfully
- *       400:
- *         description: Invalid current password
  */
-router.post(
-  '/change-password',
-  checkAbility('update', 'Profile'),
-  validationRules.changePassword,
-  handleValidationErrors,
-  userController.changePassword
-);
+router.post('/change-password', userController.changePassword);
 
 /**
  * @swagger
@@ -199,33 +184,21 @@ router.post(
  *         name: q
  *         schema:
  *           type: string
- *         description: Search query
  *       - in: query
  *         name: role
  *         schema:
  *           type: string
- *         description: Filter by role
  *     responses:
  *       200:
  *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
  */
-router.get(
-  '/search',
-  checkAbility('read', 'Profile'),
-  userController.searchUsers
-);
+router.get('/search', userController.searchUsers);
 
 /**
  * @swagger
  * /api/users/deactivate:
  *   delete:
- *     summary: Deactivate user account (Admin only)
+ *     summary: Deactivate user account
  *     tags:
  *       - Users
  *     security:
@@ -233,14 +206,8 @@ router.get(
  *     responses:
  *       200:
  *         description: Account deactivated
- *       403:
- *         description: Admin access required
  */
-router.delete(
-  '/deactivate',
-  adminOnly,
-  userController.deactivateAccount
-);
+router.delete('/deactivate', userController.deactivateAccount);
 
 // ========== SKILLS ROUTES ==========
 
@@ -256,34 +223,8 @@ router.delete(
  *     responses:
  *       200:
  *         description: List of skills
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 skills:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       name:
- *                         type: string
- *                       level:
- *                         type: string
- *                       yearsOf:
- *                         type: number
- *                       category:
- *                         type: string
- *                 total:
- *                   type: number
  */
-router.get(
-  '/skills',
-  checkAbility('read', 'Profile'),
-  userController.getSkills
-);
+router.get('/skills', userController.getSkills);
 
 /**
  * @swagger
@@ -309,22 +250,38 @@ router.get(
  *               level:
  *                 type: string
  *                 enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
- *                 example: Expert
  *               yearsOf:
  *                 type: number
- *                 example: 5
  *               category:
  *                 type: string
- *                 example: Programming
  *     responses:
  *       201:
  *         description: Skill added successfully
  */
-router.post(
-  '/skills',
-  checkAbility('update', 'Profile'),
-  userController.addSkill
-);
+router.post('/skills', userController.addSkill);
+
+/**
+ * @swagger
+ * /api/users/skills/{skillId}:
+ *   get:
+ *     summary: Get a specific skill by ID
+ *     tags:
+ *       - Skills
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: skillId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Skill details
+ *       404:
+ *         description: Skill not found
+ */
+router.get('/skills/:skillId', userController.getSkill);
 
 /**
  * @swagger
@@ -360,11 +317,7 @@ router.post(
  *       200:
  *         description: Skill updated successfully
  */
-router.put(
-  '/skills/:skillId',
-  checkAbility('update', 'Profile'),
-  userController.updateSkill
-);
+router.put('/skills/:skillId', userController.updateSkill);
 
 /**
  * @swagger
@@ -385,11 +338,7 @@ router.put(
  *       200:
  *         description: Skill removed successfully
  */
-router.delete(
-  '/skills/:skillId',
-  checkAbility('update', 'Profile'),
-  userController.removeSkill
-);
+router.delete('/skills/:skillId', userController.removeSkill);
 
 // ========== DOCUMENTS ROUTES ==========
 
@@ -405,42 +354,15 @@ router.delete(
  *     responses:
  *       200:
  *         description: List of documents
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 documents:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       name:
- *                         type: string
- *                       type:
- *                         type: string
- *                       url:
- *                         type: string
- *                       uploadedAt:
- *                         type: string
- *                       fileSize:
- *                         type: number
- *                 total:
- *                   type: number
  */
-router.get(
-  '/documents',
-  checkAbility('read', 'Profile'),
-  userController.getDocuments
-);
+router.get('/documents', userController.getDocuments);
 
 /**
  * @swagger
  * /api/users/documents:
  *   post:
  *     summary: Upload a document
+ *     description: Upload a document file (PDF, Word, Excel, PowerPoint, or plain text). Maximum file size is 10MB.
  *     tags:
  *       - Documents
  *     security:
@@ -463,19 +385,20 @@ router.get(
  *     responses:
  *       201:
  *         description: Document uploaded successfully
+ *       400:
+ *         description: Invalid file
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Firebase storage error
  */
-router.post(
-  '/documents',
-  checkAbility('update', 'Profile'),
-  upload.single('file'),
-  userController.uploadDocument
-);
+router.post('/documents', upload.single('file'), userController.uploadDocument);
 
 /**
  * @swagger
  * /api/users/documents/{documentId}:
- *   delete:
- *     summary: Remove a document
+ *   get:
+ *     summary: Get document details
  *     tags:
  *       - Documents
  *     security:
@@ -488,13 +411,9 @@ router.post(
  *           type: string
  *     responses:
  *       200:
- *         description: Document removed successfully
+ *         description: Document details
  */
-router.delete(
-  '/documents/:documentId',
-  checkAbility('update', 'Profile'),
-  userController.removeDocument
-);
+router.delete('/documents/:documentId', userController.removeDocument);
 
 /**
  * @swagger
@@ -526,10 +445,6 @@ router.delete(
  *       200:
  *         description: Document info updated successfully
  */
-router.put(
-  '/documents/:documentId',
-  checkAbility('update', 'Profile'),
-  userController.updateDocumentInfo
-);
+router.put('/documents/:documentId', userController.updateDocumentInfo);
 
 module.exports = router;

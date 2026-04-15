@@ -9,12 +9,11 @@ const fileFilter = (req, file, cb) => {
   const endpoint = req.path;
 
   if (endpoint.includes('/avatar')) {
-    // Avatar: only images
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedMimes.includes(file.mimetype)) {
+    // Avatar: accept any image type
+    if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, WebP allowed for avatar'), false);
+      cb(new Error('Invalid file type. Only image files allowed for avatar'), false);
     }
   } else if (endpoint.includes('/documents')) {
     // Documents: PDF, Word, Excel

@@ -1,1 +1,4 @@
-module.exports = require('./auth.middleware');
+module.exports = {
+  ...require('./auth.middleware'),
+  ...require('./role.middleware'),
+};
