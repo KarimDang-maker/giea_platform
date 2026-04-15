@@ -1,38 +1,45 @@
 const { v4: uuidv4 } = require('uuid');
-const TYPES_VALEURS = ['Business plan','Présentation','Etude du marché','Autre'];
+
+// Référentiel des types de documents autorisés
+const TYPES_AUTORISES = ["business plan", "etude de marche", "autre"];
 
 class DocumentProjetModel {
-    constructor(donnees){
-        this._valider(donnees);
-        this.id = uuidv4();
-        this.nomDoc = donnees.nomDoc.trim();
-        this.url = donnees.url;
-        this.pathStorage = donnees.pathStorage;
-        this.type = donnees.type;
-        this.taille = donnees.taille || 0;
-        this.uploadedAt = new Date().toISOString();
+    constructor(data={}){
+        this.id = data.id || uuidv4();
+        this.projetId = data.projetId || '';
+        this.nomDoc = data.nomDoc || '';
+        this.url = data.url || '';
+        this.pathStorage =  data.pathStorage || '';
+        this.type = data.type || '';
+        this.taille  = data.taille || '';
+        this.uploadedAt = data.uploadedAt || new Date().toISOString();
     }
-    _valider(donnee){
-        if(!donnee?.nomDoc?.trim()) throw new Error("Nom du document requis");
-        if(!donnee?.url) throw new Error("url du document requise");
-        if(!donnee?.pathStorage) throw new Error("Le chemin du document est requis");
-        if(!TYPES_VALEURS.includes(donnee?.type)) throw new Error("le type du document est requis");
-    }
+
+    /**
+     * Transforme l'objet de classe (avec ses méthodes) en un objet JS simple.
+     * Firestore ne comprend pas les classes, il ne veut que des données brutes.
+     */
     toFirestore(){
-        return {
-            id:this.id,
-            nomDoc: this.nomDoc,
-            url: this.url,
-            pathStorage: this.pathStorage,
-            type: this.type,
-            taille: this.taille,
-            uploadedAt: this.uploadedAt
-        }
+        return { ...this };
     }
+
+    /**
+     * Utilisé automatiquement par JSON.stringify (ex: lors d'un res.send en Express).
+     */
+    toJSON(){
+        return this.toFirestore();
+    }
+
+    /**
+     * Méthode STATIC : C'est une "usine" (Factory).
+     * Elle appartient à la classe DocumentProjet elle-même.
+     * Usage : DocumentProjet.fromFirestore(donnees)
+     * Pourquoi static ? Parce qu'on veut créer un objet à partir de rien.
+     */
     static fromFirestore(data){
-        const doc = Object.create(DocumentProjetModel.prototype);
-        return Object.assign(doc, data);
+        if (!data) return null;
+        return new DocumentProjetModel(data);
     }
 }
 
-module.exports = { DocumentProjetModel, TYPES_VALEURS }
+module.exports = { DocumentProjetModel, TYPES_AUTORISES }

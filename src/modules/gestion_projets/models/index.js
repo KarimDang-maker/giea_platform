@@ -1,6 +1,6 @@
-const { ProjetModel, STATUTS, TRANSITIONS, NIVEAU_MATURITE, FINANCEMENT } = require('./projets.model');
-const MembreProjetModel = require('./MembreProjet.model');
-const { DocumentProjetModel, TYPES_VALEURS } = require('./documentProjet.model');
+const { ProjetModel,FINANCEMENT, NIVEAU_MATURITE, STATUTS } = require('./projets.model');
+const { DocumentProjetModel, TYPES_AUTORISES } = require('./documentProjet.model');
+const MembreProjetModel = require('./membreProjet.model');
 
 module.exports = {
     ProjetModel,
@@ -8,8 +8,7 @@ module.exports = {
     DocumentProjetModel,
     //constantes utiles importées
     STATUTS,
-    TRANSITIONS,
     NIVEAU_MATURITE,
     FINANCEMENT,
-    TYPES_VALEURS
+    TYPES_AUTORISES
 };

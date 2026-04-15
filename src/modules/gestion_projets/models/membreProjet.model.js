@@ -1,21 +1,32 @@
 const { v4: uuidv4 } = require('uuid');
 
 class MembreProjetModel {
-    constructor(donnees){
-        //this._valider(donnees);
-        this.id = uuidv4();
-        this.nom = donnees.nom.trim();
-        this.roleMembre = donnees.roleMembre.trim();
-        this.addedAt = new Date().toISOString();
+    constructor(data={}){
+        this.id = data.id || uuidv4();
+        this.projetId = data.projetId || '';
+        this.nom = data.nom || '';
+        this.role = data.role || 'participant';
+        this.biographie = data.biographie || '';
+        this.addedAt = data.addedAt || new Date().toISOString();
     }
-    //convertie un objet pour envoyer à firestore
+
+    /**
+     * Prépare les données pour l'enregistrement en base de données.
+     */
     toFirestore(){
-        return {id:this.id, nom: this.nom, roleMembre: this.roleMembre, addedAt: this.addedAt}
+        return { ...this };
     }
-    //reconstruit un objet reçu de firestore(lecture)
+
+    /**
+     * Prépare les données pour l'envoi vers le front-end.
+     */
+    toJSON(){
+        return this.toFirestore();
+    }
+
     static fromFirestore(data){
-        const mem = Object.create(MembreProjetModel.prototype);
-        return Object.assign(mem, data);
+        if (!data) return null;
+        return new MembreProjetModel(data);
     }
 }
 
