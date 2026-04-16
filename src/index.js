@@ -14,8 +14,7 @@ const configurePassport = require('./config/passport');
 const swaggerSpec = require('./config/swagger');
 
 // Routes - Modules
-const authRoutes = require('./modules/authentication/routes');
-const userRoutes = require('./routes/user.routes');
+const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -68,6 +67,9 @@ app.use(passport.session());
 const limiter = rateLimit(rateLimitConfig);
 app.use('/api/auth/', limiter);
 
+// Middleware - Static Files (Public folder)
+app.use(express.static('src/public'));
+
 // Response logging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
@@ -77,6 +79,11 @@ app.use((req, res, next) => {
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date() });
+});
+
+// Auth Callback Route - Serve HTML page for OAuth callbacks
+app.get('/auth-callback', (req, res) => {
+  res.sendFile('public/auth-callback.html', { root: __dirname });
 });
 
 // Swagger Documentation

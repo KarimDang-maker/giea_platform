@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const authController = require('../controllers/auth.controller');
 const { authMiddleware } = require('../middleware/auth.middleware');
-const { validationRules, handleValidationErrors } = require('../../../utils/helpers');
+const { authValidationRules, handleAuthValidationErrors } = require('../utils/validators');
 
 const router = express.Router();
 
@@ -61,8 +61,8 @@ const router = express.Router();
  */
 router.post(
   '/register',
-  validationRules.register,
-  handleValidationErrors,
+  authValidationRules.register,
+  handleAuthValidationErrors,
   authController.register
 );
 
@@ -174,8 +174,8 @@ router.get('/verify-email-link', authController.verifyEmailLink);
  */
 router.post(
   '/login',
-  validationRules.login,
-  handleValidationErrors,
+  authValidationRules.login,
+  handleAuthValidationErrors,
   authController.login
 );
 
@@ -221,8 +221,8 @@ router.post('/logout', authController.logout);
  */
 router.post(
   '/forgot-password',
-  validationRules.forgotPassword,
-  handleValidationErrors,
+  authValidationRules.forgotPassword,
+  handleAuthValidationErrors,
   authController.forgotPassword
 );
 
@@ -260,8 +260,8 @@ router.post(
  */
 router.post(
   '/reset-password',
-  validationRules.resetPassword,
-  handleValidationErrors,
+  authValidationRules.resetPassword,
+  handleAuthValidationErrors,
   authController.resetPassword
 );
 
@@ -317,39 +317,6 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   authController.googleCallback
-);
-
-/**
- * @swagger
- * /api/auth/facebook:
- *   get:
- *     summary: Initiate Facebook OAuth login
- *     tags:
- *       - OAuth
- *     responses:
- *       307:
- *         description: Redirect to Facebook OAuth
- */
-router.get(
-  '/facebook',
-  passport.authenticate('facebook', { scope: ['email'] })
-);
-
-/**
- * @swagger
- * /api/auth/facebook/callback:
- *   get:
- *     summary: Facebook OAuth callback
- *     tags:
- *       - OAuth
- *     responses:
- *       307:
- *         description: Redirect to application with token
- */
-router.get(
-  '/facebook/callback',
-  passport.authenticate('facebook', { failureRedirect: '/login' }),
-  authController.facebookCallback
 );
 
 module.exports = router;
