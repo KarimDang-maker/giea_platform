@@ -1,6 +1,6 @@
-const { ProjetModel,FINANCEMENT, NIVEAU_MATURITE, STATUTS } = require('./projets.model');
+const { ProjetModel, FINANCEMENT, NIVEAU_MATURITE, STATUTS } = require('./projets.model');
 const { DocumentProjetModel, TYPES_AUTORISES } = require('./documentProjet.model');
-const MembreProjetModel = require('./membreProjet.model');
+const { MembreProjetModel } = require('./membreProjet.model');
 
 module.exports = {
     ProjetModel,
