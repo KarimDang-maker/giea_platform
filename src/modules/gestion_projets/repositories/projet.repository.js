@@ -120,8 +120,12 @@ class ProjetRepository {
     async updateArray(id, field, newArray) {
         try {
             const docRef = db.collection(COLLECTION_NAME).doc(id);
+            
+            // Sécurité: On s'assure que chaque élément est un objet plat (cas où on passerait des instances de classe)
+            const cleanArray = newArray.map(item => item.toFirestore ? item.toFirestore() : item);
+
             await docRef.update({
-                [field]: newArray,
+                [field]: cleanArray,
                 updatedAt: new Date().toISOString()
             });
             return true;

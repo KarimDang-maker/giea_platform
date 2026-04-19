@@ -15,6 +15,7 @@ const swaggerSpec = require('./config/swagger');
 
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
+const { projetRoutes } = require('./modules/gestion_projets/routes')
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -102,7 +103,10 @@ app.get('/api/swagger.json', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes); 
+
+//Routes pour la gestion des projets
+app.use('/api/projet', projetRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -115,6 +119,7 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       health: '/health',
+      projet: '/api/projet'
     },
   });
 });

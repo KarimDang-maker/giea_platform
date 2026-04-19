@@ -97,7 +97,7 @@ class ProjetService {
      * Lister les projets d'un utilisateur
      */
     async listerProjetsPorteur(porteurId) {
-        return await projetRepository.findAllByPorteur(porteurId);
+        return await projetRepository.findByPorteur(porteurId);
     }
 
     /**

@@ -30,11 +30,12 @@ class ProjetModel {
         this.documents = (data.documents || []).map(d => new DocumentProjetModel(d)); 
         this.suggestions = data.suggestions || [];
         
-        this.createdAt = data.createdAt || new Date().toISOString();
-        this.updatedAt = data.updatedAt || new Date().toISOString();
+        this.createdAt = this._formatDate(data.createdAt);
+        this.updatedAt = this._formatDate(data.updatedAt);
     }
 
     static valide(data){
+        if(!data.nomPorteur || data.nomPorteur.trim().length < 2) return "Le nom du porteur de projet est requis";
         if(!data.titre || data.titre.trim().length < 5) return "Le titre du projet est requis et doit comporter au moins 5 caractères";
         if(!data.description || data.description.trim().length < 20) return "La description du projet est requise et doit comporter au moins 20 caractères";
         if(!data.secteur) return "Le secteur d'activité du projet est requis";
@@ -42,6 +43,15 @@ class ProjetModel {
         if(!data.financement || !FINANCEMENT.includes(data.financement)) return "Le type de financement est invalide";
         if(!data.niveauMaturite || !NIVEAU_MATURITE.includes(data.niveauMaturite)) return "Le niveau de maturité est invalide";
         return null
+    }
+
+    /**
+     * Helper pour transformer les Timestamps Firebase en ISOString
+     */
+    _formatDate(date) {
+        if (!date) return new Date().toISOString();
+        if (date.toDate && typeof date.toDate === 'function') return date.toDate().toISOString();
+        return date;
     }
 
     /**

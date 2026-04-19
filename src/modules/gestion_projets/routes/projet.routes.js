@@ -1,30 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const projetController = require('../controllers/projet.controller');
-const { verifyToken } = require('../../authentication/middlewares/auth.middleware');
-const { checkRole } = require('../../authentication/middlewares/role.middleware');
+const { authMiddleware } = require('../../authentication/middlewares/auth.middleware');
+const { roleMiddleware, adminOnly } = require('../../authentication/middlewares/role.middleware');
 const upload = require('../middlewares/upload.middleware');
+const estProprietaire = require('../middlewares/owner.middleware');
 
 // --- Protection Globale : Toutes les routes ci-dessous nécessitent une connexion ---
-router.use(verifyToken);
+router.use(authMiddleware);
+const roleAcces = roleMiddleware('admin', 'entrepreneur');
 
 // --- Routes Porteur de projet ---
-router.post('/', projetController.creerProjet);
-router.get('/mes-projets', projetController.listerMesProjets);
-router.get('/:id', projetController.obtenirProjet);
-router.put('/:id', projetController.mettreAJourInfos);
-router.delete('/:id', checkRole(['admin', 'porteur']), projetController.supprimerProjet);
+router.post('/creer-projet', roleAcces, projetController.creerProjet);
+router.get('/liste-projets', roleAcces, projetController.listerMesProjets);
+router.get('/mon-projet/:id', roleAcces, estProprietaire, projetController.obtenirProjet);
+router.put('/update-projet/:id', roleAcces, estProprietaire, projetController.mettreAJourInfos);
+router.delete('/supprime-projet/:id', roleAcces, estProprietaire, projetController.supprimerProjet);
 
 // Gestion des membres
-router.post('/:id/membres', projetController.ajouterMembre);
-router.delete('/:id/membres/:membreId', projetController.retirerMembre);
+router.post('/:id/membres', roleAcces, estProprietaire, projetController.ajouterMembre);
+router.delete('/:id/membres/:membreId', roleAcces, estProprietaire, projetController.retirerMembre);
 
 // Gestion des documents
-router.post('/:id/documents', upload.single('fichier'), projetController.ajouterDocument);
-router.delete('/:id/documents/:docId', projetController.supprimerDocument);
+router.post('/:id/documents', roleAcces, estProprietaire, upload.single('fichier'), projetController.ajouterDocument);
+router.delete('/:id/documents/:docId', roleAcces, estProprietaire, projetController.supprimerDocument);
 
 // --- Routes Admin ---
-router.get('/admin/tous', checkRole(['admin']), projetController.listerTousLesProjets);
-router.patch('/:id/statut', checkRole(['admin']), projetController.changerStatut);
+router.get('/admin/tous', adminOnly, projetController.listerTousLesProjets);
+router.patch('/:id/statut', adminOnly, projetController.changerStatut);
 
 module.exports = router;
