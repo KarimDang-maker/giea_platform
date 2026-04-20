@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
+const marketplaceRoutes = require('./modules/marketplace/routes');
 
 // Database and Config
 const { initializeFirestore } = require('./config/database');
@@ -99,6 +100,8 @@ app.get('/api/swagger.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
+
+app.use('/api/marketPlace', marketplaceRoutes);
 
 // API Routes
 app.use('/api/auth', authRoutes);
