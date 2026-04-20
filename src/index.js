@@ -8,6 +8,7 @@ const expressSession = require('express-session');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 const marketplaceRoutes = require('./modules/marketplace/routes');
+const { eventsRouter, sessionsRouter, meRouter } = require('./modules/events/routes');
 
 // Database and Config
 const { initializeFirestore } = require('./config/database');
@@ -102,6 +103,9 @@ app.get('/api/swagger.json', (req, res) => {
 });
 
 app.use('/api/marketPlace', marketplaceRoutes);
+app.use('/api/events', eventsRouter);
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/me', meRouter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -117,6 +121,9 @@ app.get('/', (req, res) => {
     routes: {
       auth: '/api/auth',
       users: '/api/users',
+      events: '/api/events',
+      sessions: '/api/sessions',
+      me: '/api/me',
       health: '/health',
     },
   });
