@@ -124,6 +124,7 @@ const options = {
     ],
   },
   apis: [
+    `${__dirname}/../modules/categories/routes/*.js`,
     `${__dirname}/../modules/authentication/routes/*.js`,
     `${__dirname}/../modules/marketplace/routes/*.js`,
   ],
