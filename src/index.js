@@ -15,6 +15,7 @@ const swaggerSpec = require('./config/swagger');
 
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
+const { categoryRoutes } = require('./modules/categories');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -103,6 +104,7 @@ app.get('/api/swagger.json', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -114,6 +116,7 @@ app.get('/', (req, res) => {
     routes: {
       auth: '/api/auth',
       users: '/api/users',
+      categories: '/api/categories',
       health: '/health',
     },
   });
