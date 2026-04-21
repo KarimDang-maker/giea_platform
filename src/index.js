@@ -13,6 +13,9 @@ const { initializeFirestore } = require('./config/database');
 const configurePassport = require('./config/passport');
 const swaggerSpec = require('./config/swagger');
 
+// Initialize Firestore (Must be called before importing routes)
+const db = initializeFirestore();
+
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
@@ -22,9 +25,6 @@ const { rateLimitConfig } = require('./utils/helpers');
 
 // Initialize Express app
 const app = express();
-
-// Initialize Firestore
-const db = initializeFirestore();
 
 // Configure Passport
 configurePassport(passport);

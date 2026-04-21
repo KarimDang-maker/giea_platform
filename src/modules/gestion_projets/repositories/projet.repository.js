@@ -1,18 +1,21 @@
 const admin = require('firebase-admin');
-const db = admin.firestore();
 const { ProjetModel } = require('../models/projets.model');
 
 const COLLECTION_NAME = 'projets';
 
 class ProjetRepository {
+    get db() {
+        return admin.firestore();
+    }
+
     /**
      * Crée un nouveau projet. Si projet.id est null, Firestore génère un ID.
      */
     async create(projet) {
         try {
             const docRef = projet.id 
-                ? db.collection(COLLECTION_NAME).doc(projet.id) 
-                : db.collection(COLLECTION_NAME).doc();
+                ? this.db.collection(COLLECTION_NAME).doc(projet.id) 
+                : this.db.collection(COLLECTION_NAME).doc();
             
             projet.id = docRef.id;
             await docRef.set(projet.toFirestore());
@@ -24,7 +27,7 @@ class ProjetRepository {
 
     async findById(id) {
         try {
-            const doc = await db.collection(COLLECTION_NAME).doc(id).get();
+            const doc = await this.db.collection(COLLECTION_NAME).doc(id).get();
             return doc.exists ? ProjetModel.fromFirestore({ id: doc.id, ...doc.data() }) : null;
         } catch (error) {
             throw new Error(`Erreur lors de la récupération du projet ${id} : ${error.message}`);
@@ -33,7 +36,7 @@ class ProjetRepository {
 
     async findByPorteur(porteurId) {
         try {
-            const snapshot = await db.collection(COLLECTION_NAME)
+            const snapshot = await this.db.collection(COLLECTION_NAME)
                 .where('porteurId', '==', porteurId)
                 .orderBy('createdAt', 'desc')
                 .get();
@@ -46,7 +49,7 @@ class ProjetRepository {
     async findAll() {
         try {
             // Ajout d'une limite de sécurité de 100 pour éviter les surcharges
-            const snapshot = await db.collection(COLLECTION_NAME)
+            const snapshot = await this.db.collection(COLLECTION_NAME)
                 .orderBy('createdAt', 'desc')
                 .limit(100) 
                 .get();
@@ -58,7 +61,7 @@ class ProjetRepository {
 
     async update(id, data) {
         try {
-            const docRef = db.collection(COLLECTION_NAME).doc(id);
+            const docRef = this.db.collection(COLLECTION_NAME).doc(id);
             await docRef.update({
                 ...data,
                 updatedAt: new Date().toISOString()
@@ -71,7 +74,7 @@ class ProjetRepository {
 
     async delete(id) {
         try {
-            await db.collection(COLLECTION_NAME).doc(id).delete();
+            await this.db.collection(COLLECTION_NAME).doc(id).delete();
             return true;
         } catch (error) {
             throw new Error(`Erreur lors de la suppression du projet ${id} : ${error.message}`);
@@ -85,7 +88,7 @@ class ProjetRepository {
      */
     async addItem(id, field, item) {
         try {
-            const docRef = db.collection(COLLECTION_NAME).doc(id);
+            const docRef = this.db.collection(COLLECTION_NAME).doc(id);
             await docRef.update({
                 [field]: admin.firestore.FieldValue.arrayUnion(item),
                 updatedAt: new Date().toISOString()
@@ -102,7 +105,7 @@ class ProjetRepository {
      */
     async removeItem(id, field, item) {
         try {
-            const docRef = db.collection(COLLECTION_NAME).doc(id);
+            const docRef = this.db.collection(COLLECTION_NAME).doc(id);
             await docRef.update({
                 [field]: admin.firestore.FieldValue.arrayRemove(item),
                 updatedAt: new Date().toISOString()
@@ -119,7 +122,7 @@ class ProjetRepository {
      */
     async updateArray(id, field, newArray) {
         try {
-            const docRef = db.collection(COLLECTION_NAME).doc(id);
+            const docRef = this.db.collection(COLLECTION_NAME).doc(id);
             
             // Sécurité: On s'assure que chaque élément est un objet plat (cas où on passerait des instances de classe)
             const cleanArray = newArray.map(item => item.toFirestore ? item.toFirestore() : item);
