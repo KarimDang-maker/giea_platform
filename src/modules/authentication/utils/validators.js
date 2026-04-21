@@ -69,7 +69,7 @@ const handleAuthValidationErrors = (req, res, next) => {
 // Auth-specific response formatters
 const formatUserResponse = (user) => {
   return {
-    id: user._id,
+    id: user.uid || user._id,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,

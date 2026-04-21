@@ -102,6 +102,82 @@ const options = {
             },
           },
         },
+        MembreProjet: {
+          type: 'object',
+          required: ['nom', 'role'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            nom: { type: 'string', example: 'Alice Dupont' },
+            role: { type: 'string', example: 'Directrice Technique' },
+            addedAt: { type: 'string', format: 'date-time', readOnly: true },
+          },
+        },
+        DocumentProjet: {
+          type: 'object',
+          required: ['nomDoc', 'type'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            nomDoc: { type: 'string', example: 'Business Plan V1' },
+            url: { type: 'string', format: 'uri', readOnly: true },
+            type: { 
+              type: 'string', 
+              enum: ['business_plan', 'presentation', 'etude_de_marche', 'autre'],
+              example: 'business_plan'
+            },
+            taille: { type: 'integer', example: 1048576, readOnly: true },
+            uploadedAt: { type: 'string', format: 'date-time', readOnly: true },
+          },
+        },
+        Projet: {
+          type: 'object',
+          required: ['nomPorteur', 'titre', 'description', 'secteur', 'montantRecherche', 'financement', 'niveauMaturite'],
+          properties: {
+            id: { type: 'string', readOnly: true },
+            porteurId: { type: 'string', readOnly: true },
+            nomPorteur: { type: 'string', example: 'John Doe' },
+            titre: { type: 'string', example: 'Plateforme de Recyclage Innovante' },
+            description: { 
+              type: 'string', 
+              example: 'Un projet visant à transformer les déchets plastiques en briques de construction abordables.' 
+            },
+            secteur: { type: 'string', example: 'Environnement' },
+            montantRecherche: { type: 'number', example: 15000000 },
+            financement: { 
+              type: 'string', 
+              enum: ['subvention', 'investissement', 'mixte'], 
+              example: 'investissement' 
+            },
+            niveauMaturite: { 
+              type: 'string', 
+              enum: ['idée', 'prototype', 'productif'], 
+              example: 'prototype' 
+            },
+            statut: { 
+              type: 'string', 
+              enum: ['soumis', 'en_evaluation', 'en_revision', 'bancable', 'rejete', 'archivé'],
+              readOnly: true 
+            },
+            equipe: { 
+              type: 'array', 
+              items: { $ref: '#/components/schemas/MembreProjet' } 
+            },
+            documents: { 
+              type: 'array', 
+              items: { $ref: '#/components/schemas/DocumentProjet' } 
+            },
+            suggestions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  commentaire: { type: 'string' },
+                  date: { type: 'string', format: 'date-time' }
+                }
+              },
+              readOnly: true
+            },
+          },
+        },
         Error: {
           type: 'object',
           properties: {
@@ -126,6 +202,7 @@ const options = {
   apis: [
     `${__dirname}/../modules/categories/routes/*.js`,
     `${__dirname}/../modules/authentication/routes/*.js`,
+    `${__dirname}/../modules/gestion_projets/routes/*.js`,
     `${__dirname}/../modules/marketplace/routes/*.js`,
   ],
 };

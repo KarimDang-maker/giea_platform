@@ -14,8 +14,12 @@ const { initializeFirestore } = require('./config/database');
 const configurePassport = require('./config/passport');
 const swaggerSpec = require('./config/swagger');
 
+// Initialize Firestore (Must be called before importing routes)
+const db = initializeFirestore();
+
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
+const { projetRoutes } = require('./modules/gestion_projets/routes')
 const { categoryRoutes } = require('./modules/categories');
 
 // Utils
@@ -23,9 +27,6 @@ const { rateLimitConfig } = require('./utils/helpers');
 
 // Initialize Express app
 const app = express();
-
-// Initialize Firestore
-const db = initializeFirestore();
 
 // Configure Passport
 configurePassport(passport);
@@ -106,6 +107,10 @@ app.use('/api/marketPlace', marketplaceRoutes);
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes); 
+
+//Routes pour la gestion des projets
+app.use('/api/projet', projetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 
@@ -121,6 +126,7 @@ app.get('/', (req, res) => {
       users: '/api/users',
       categories: '/api/categories',
       health: '/health',
+      projet: '/api/projet'
     },
   });
 });
