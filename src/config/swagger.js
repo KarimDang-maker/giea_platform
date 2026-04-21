@@ -149,7 +149,7 @@ const options = {
             title: { type: 'string' },
             description: { type: 'string' },
             type: { type: 'string' },
-            speakerName: { type: 'string' },
+            lead: { type: 'string' },
             startTime: { type: 'string', format: 'date-time' },
             endTime: { type: 'string', format: 'date-time' },
             maxParticipants: { type: 'integer' },

@@ -5,7 +5,7 @@ class EventSession {
         this.title = data.title || '';
         this.description = data.description || '';
         this.type = data.type || ''; // e.g., conference, workshop
-        this.speakerName = data.speakerName || '';
+        this.lead = data.lead || '';
         this.startTime = data.startTime || null;
         this.endTime = data.endTime || null;
         this.maxParticipants = data.maxParticipants || 0;
@@ -21,7 +21,7 @@ class EventSession {
             title: this.title,
             description: this.description,
             type: this.type,
-            speakerName: this.speakerName,
+            lead: this.lead,
             startTime: this.startTime,
             endTime: this.endTime,
             maxParticipants: this.maxParticipants,
