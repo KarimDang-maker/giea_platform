@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
+const marketplaceRoutes = require('./modules/marketplace/routes');
 
 // Database and Config
 const { initializeFirestore } = require('./config/database');
@@ -19,6 +20,7 @@ const db = initializeFirestore();
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
+const { categoryRoutes } = require('./modules/categories');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -101,12 +103,16 @@ app.get('/api/swagger.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
+app.use('/api/marketPlace', marketplaceRoutes);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes); 
 
 //Routes pour la gestion des projets
 app.use('/api/projet', projetRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -118,6 +124,7 @@ app.get('/', (req, res) => {
     routes: {
       auth: '/api/auth',
       users: '/api/users',
+      categories: '/api/categories',
       health: '/health',
       projet: '/api/projet'
     },

@@ -15,7 +15,7 @@ class User {
     this.password = data.password || '';
     this.phone = data.phone || '';
     this.avatar = data.avatar || '';
-    this.role = data.role || 'student';
+    this.role = data.role || 'entrepreneur'; // Default role
     
     // Verification
     this.isVerified = data.isVerified || false;
