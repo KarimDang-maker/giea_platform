@@ -80,6 +80,20 @@ const sessionRouter = express.Router();
  *         name: sessionId
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               description: { type: string }
+ *               type: { type: string }
+ *               speakerName: { type: string }
+ *               startTime: { type: string, format: date-time }
+ *               endTime: { type: string, format: date-time }
+ *               maxParticipants: { type: integer }
  *     responses:
  *       200:
  *         description: Session mise à jour

@@ -33,6 +33,16 @@ class EventRegistrationService extends BaseService {
         return eventRegistrationRepository.countByEventId(eventId);
     }
 
+    async update(id, data) {
+        if (data.status) {
+            const validStatuses = ['pending', 'confirmed', 'cancelled'];
+            if (!validStatuses.includes(data.status)) {
+                throw new Error(`Statut invalide. Les valeurs possibles sont : ${validStatuses.join(', ')}`);
+            }
+        }
+        return super.update(id, data);
+    }
+
     async getByUserId(idUser) {
         return eventRegistrationRepository.findByUserId(idUser);
     }

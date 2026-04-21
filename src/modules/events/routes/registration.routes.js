@@ -100,9 +100,13 @@ const { isAdminOrCreator, isAdminOrCreatorOrParticipantOwner } = require('../mid
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *       - in: query
+ *         name: hard
+ *         schema: { type: boolean, default: false }
+ *         description: Si true, supprime définitivement l'inscription. Si false (défaut), change le statut à 'cancelled'.
  *     responses:
  *       200:
- *         description: Inscription annulée
+ *         description: Inscription annulée ou supprimée
  */
 router.post('/:eventId/register', optionalAuth, eventRegistrationController.register);
 router.get('/:eventId/participants', authMiddleware, isAdminOrCreator, eventRegistrationController.findByEvent);

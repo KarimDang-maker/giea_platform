@@ -97,6 +97,19 @@ const { isAdmin, isAdminOrCreator } = require('../middleware/events.middleware')
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               description: { type: string }
+ *               location: { type: string }
+ *               startDate: { type: string, format: date-time }
+ *               endDate: { type: string, format: date-time }
+ *               coverImage: { type: string }
  *     responses:
  *       200:
  *         description: Événement mis à jour

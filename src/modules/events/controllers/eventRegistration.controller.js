@@ -49,9 +49,17 @@ class EventRegistrationController {
     async cancel(req, res) {
         try {
             const { id } = req.params;
-            const success = await eventRegistrationService.delete(id);
-            if (!success) return res.status(404).json({ message: 'Inscription non trouvée' });
-            res.json({ message: 'Inscription annulée' });
+            const hard = req.query.hard === 'true';
+
+            if (hard) {
+                const success = await eventRegistrationService.delete(id);
+                if (!success) return res.status(404).json({ message: 'Inscription non trouvée' });
+                res.json({ message: 'Inscription supprimée définitivement' });
+            } else {
+                const registration = await eventRegistrationService.update(id, { status: 'cancelled' });
+                if (!registration) return res.status(404).json({ message: 'Inscription non trouvée' });
+                res.json({ message: 'Inscription annulée (status: cancelled)', registration });
+            }
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
