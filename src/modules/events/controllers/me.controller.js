@@ -3,7 +3,7 @@ const { eventRegistrationService, sessionParticipantService, eventService, event
 class MeController {
     async getMyEvents(req, res) {
         try {
-            const userId = req.user.id || req.user.email;
+            const userId = req.user.userId;
             const registrations = await eventRegistrationService.getByUserId(userId);
 
             // Get event details for each registration
@@ -18,7 +18,7 @@ class MeController {
 
     async getMySessions(req, res) {
         try {
-            const userId = req.user.id || req.user.email;
+            const userId = req.user.userId;
             const participations = await sessionParticipantService.getByUserId(userId);
 
             // Get session details for each participation

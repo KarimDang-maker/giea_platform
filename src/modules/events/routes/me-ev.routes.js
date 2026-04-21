@@ -5,7 +5,7 @@ const { authMiddleware } = require('../../authentication/middleware/auth.middlew
 
 /**
  * @swagger
- * /api/me_event/events:
+ * /api/me/events:
  *   get:
  *     summary: Lister mes événements (inscriptions)
  *     tags: [Me]

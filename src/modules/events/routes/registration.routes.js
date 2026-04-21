@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { eventRegistrationController } = require('../controllers');
 const { authMiddleware, optionalAuth } = require('../../authentication/middleware/auth.middleware');
+const { isAdminOrCreator, isAdminOrCreatorOrParticipantOwner } = require('../middleware/events.middleware');
 
 /**
  * @swagger
@@ -104,8 +105,8 @@ const { authMiddleware, optionalAuth } = require('../../authentication/middlewar
  *         description: Inscription annulée
  */
 router.post('/:eventId/register', optionalAuth, eventRegistrationController.register);
-router.get('/:eventId/participants', authMiddleware, eventRegistrationController.findByEvent);
-router.patch('/:eventId/participants/:id', authMiddleware, eventRegistrationController.updateStatus);
-router.delete('/:eventId/participants/:id', authMiddleware, eventRegistrationController.cancel);
+router.get('/:eventId/participants', authMiddleware, isAdminOrCreator, eventRegistrationController.findByEvent);
+router.patch('/:eventId/participants/:id', authMiddleware, isAdminOrCreatorOrParticipantOwner, eventRegistrationController.updateStatus);
+router.delete('/:eventId/participants/:id', authMiddleware, isAdminOrCreatorOrParticipantOwner, eventRegistrationController.cancel);
 
 module.exports = router;

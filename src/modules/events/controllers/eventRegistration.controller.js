@@ -10,7 +10,7 @@ class EventRegistrationController {
                 eventId,
                 email,
                 fullName,
-                idUser: has_account ? (idUser || req.user?.id) : null
+                idUser: has_account ? (idUser || req.user?.userId) : null
             };
 
             const registration = await eventRegistrationService.create(registrationData);

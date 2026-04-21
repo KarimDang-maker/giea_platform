@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { eventController } = require('../controllers');
 const { authMiddleware, optionalAuth } = require('../../authentication/middleware/auth.middleware');
+const { isAdmin, isAdminOrCreator } = require('../middleware/events.middleware');
 
 /**
  * @swagger
@@ -114,10 +115,10 @@ const { authMiddleware, optionalAuth } = require('../../authentication/middlewar
  *       200:
  *         description: Événement supprimé
  */
-router.post('/', authMiddleware, eventController.create);
-router.get('/', optionalAuth, eventController.findAll);
-router.get('/:id', optionalAuth, eventController.findById);
-router.put('/:id', authMiddleware, eventController.update);
-router.delete('/:id', authMiddleware, eventController.delete);
+router.post('/', authMiddleware, isAdmin, eventController.create);
+router.get('/', authMiddleware, eventController.findAll);
+router.get('/:id', authMiddleware, eventController.findById);
+router.put('/:id', authMiddleware, isAdmin, eventController.update);
+router.delete('/:id', authMiddleware, isAdminOrCreator, eventController.delete);
 
 module.exports = router;

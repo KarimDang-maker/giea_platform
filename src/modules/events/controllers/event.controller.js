@@ -3,7 +3,7 @@ const { eventService, eventSessionService, eventRegistrationService } = require(
 class EventController {
     async create(req, res) {
         try {
-            const data = { ...req.body, createdBy: req.user?.id || 'admin' };
+            const data = { ...req.body, createdBy: req.user.userId };
             const event = await eventService.create(data);
             res.status(201).json(event);
         } catch (error) {

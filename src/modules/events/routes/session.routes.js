@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { eventSessionController, sessionParticipantController } = require('../controllers');
 const { authMiddleware, optionalAuth } = require('../../authentication/middleware/auth.middleware');
+const { isAdmin, isAdminOrEventCreatorForSession, isAdminOrCreatorOrSessionParticipantOwner } = require('../middleware/events.middleware');
 
 // Root is /api/events or /api/sessions depending on mounting
 // Mounted at /api/events
@@ -59,8 +60,8 @@ const { authMiddleware, optionalAuth } = require('../../authentication/middlewar
  *               items:
  *                 $ref: '#/components/schemas/EventSession'
  */
-router.post('/:eventId/sessions', authMiddleware, eventSessionController.create);
-router.get('/:eventId/sessions', optionalAuth, eventSessionController.findByEvent);
+router.post('/:eventId/sessions', authMiddleware, isAdmin, eventSessionController.create);
+router.get('/:eventId/sessions', authMiddleware, eventSessionController.findByEvent);
 
 // Also need separate routes for session-specific actions
 // These will be mounted at /api/sessions
@@ -99,7 +100,7 @@ const sessionRouter = express.Router();
  * 
  * /api/sessions/{sessionId}/join:
  *   post:
- *     summary: S'inscrire à une session
+ *     summary: S'inscrire à une session (via inscription événement)
  *     tags: [Session Participants]
  *     parameters:
  *       - in: path
@@ -107,14 +108,14 @@ const sessionRouter = express.Router();
  *         required: true
  *         schema: { type: string }
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [registrationId]
  *             properties:
- *               email: { type: string }
- *               fullName: { type: string }
- *               idUser: { type: string }
+ *               registrationId: { type: string, description: "ID de l'inscription à l'événement parent" }
  *     responses:
  *       201:
  *         description: Inscription réussie
@@ -163,13 +164,13 @@ const sessionRouter = express.Router();
  *       200:
  *         description: Désinscription réussie
  */
-sessionRouter.put('/:sessionId', authMiddleware, eventSessionController.update);
-sessionRouter.delete('/:sessionId', authMiddleware, eventSessionController.delete);
+sessionRouter.put('/:sessionId', authMiddleware, isAdmin, eventSessionController.update);
+sessionRouter.delete('/:sessionId', authMiddleware, isAdminOrEventCreatorForSession, eventSessionController.delete);
 
 // Participants
-sessionRouter.post('/:sessionId/join', optionalAuth, sessionParticipantController.join);
-sessionRouter.get('/:sessionId/participants', authMiddleware, sessionParticipantController.findBySession);
-sessionRouter.delete('/:sessionId/participants/:id', authMiddleware, sessionParticipantController.leave);
+sessionRouter.post('/:sessionId/join', authMiddleware, sessionParticipantController.join);
+sessionRouter.get('/:sessionId/participants', authMiddleware, isAdminOrEventCreatorForSession, sessionParticipantController.findBySession);
+sessionRouter.delete('/:sessionId/participants/:id', authMiddleware, isAdminOrCreatorOrSessionParticipantOwner, sessionParticipantController.leave);
 
 module.exports = {
     eventSessionRoutes: router,
