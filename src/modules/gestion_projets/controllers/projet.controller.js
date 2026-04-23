@@ -49,6 +49,18 @@ class ProjetController {
         }
     }
 
+    async listerParSecteur(req, res) {
+        try {
+            const { secteurId } = req.params;
+            console.log(`[DEBUG] Recherche de projets pour le secteur ID: ${secteurId}`);
+            const projets = await projetService.listerProjetsParSecteur(secteurId);
+            res.json(projets);
+        } catch (error) {
+            console.error(`[ERROR] Erreur lors de la recherche par secteur ${req.params.secteurId}:`, error.message);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async listerTousLesProjets(req, res) {
         try {
             console.log("[DEBUG] Admin : Liste de tous les projets");
