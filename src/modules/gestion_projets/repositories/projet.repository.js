@@ -72,6 +72,25 @@ class ProjetRepository {
         }
     }
 
+    /**
+     * Recherche des projets selon des critères dynamiques (supporte la notation par points).
+     * @param {Object} criteria - Objet de filtres (ex: { 'secteur.id': 'cat_123' })
+     */
+    async findByCriteria(criteria) {
+        try {
+            let query = this.db.collection(COLLECTION_NAME);
+            
+            for (const [key, value] of Object.entries(criteria)) {
+                query = query.where(key, '==', value);
+            }
+
+            const snapshot = await query.orderBy('createdAt', 'desc').get();
+            return snapshot.docs.map(doc => ProjetModel.fromFirestore({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            throw new Error(`Erreur lors de la recherche par critères : ${error.message}`);
+        }
+    }
+
     async delete(id) {
         try {
             await this.db.collection(COLLECTION_NAME).doc(id).delete();
@@ -93,7 +112,7 @@ class ProjetRepository {
                 [field]: admin.firestore.FieldValue.arrayUnion(item),
                 updatedAt: new Date().toISOString()
             });
-            return true;
+            return true; 
         } catch (error) {
             throw new Error(`Erreur lors de l'ajout dans le champ ${field} : ${error.message}`);
         }

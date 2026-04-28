@@ -16,7 +16,22 @@ class ProjetModel {
         this.nomPorteur = data.nomPorteur || ''; 
         this.titre = data.titre || '';
         this.description = data.description || '';
-        this.secteur = data.secteur || '';
+
+        // Dénormalisation du secteur : on stocke l'ID et le Nom.
+        // Si data.secteur est une string, on considère que l'ID est null (nouveau secteur à créer).
+        if (data.secteur && typeof data.secteur === 'object') {
+            this.secteur = {
+                id: data.secteur.id || null,
+                name: data.secteur.name || ''
+            };
+        } else {
+            this.secteur = {
+                id: null,
+                name: data.secteur || ''
+            };
+        }
+
+        this.sousSecteur = data.sousSecteur || null;
         this.montantRecherche = data.montantRecherche ? Number(data.montantRecherche) : 0;
         
         // Références aux constantes déclarées en haut du fichier
@@ -38,7 +53,19 @@ class ProjetModel {
         if(!data.nomPorteur || data.nomPorteur.trim().length < 2) return "Le nom du porteur de projet est requis";
         if(!data.titre || data.titre.trim().length < 5) return "Le titre du projet est requis et doit comporter au moins 5 caractères";
         if(!data.description || data.description.trim().length < 20) return "La description du projet est requise et doit comporter au moins 20 caractères";
-        if(!data.secteur) return "Le secteur d'activité du projet est requis";
+        
+        // Validation du secteur : Accepte une string non vide OU un objet contenant un nom
+        const s = data.secteur;
+        const secteurPresent = s && (
+            (typeof s === 'string' && s.trim().length > 0) || 
+            (typeof s === 'object' && s.name && s.name.trim().length > 0)
+        );
+        if(!secteurPresent) return "Le secteur d'activité du projet est requis";
+
+        if (data.sousSecteur && typeof data.sousSecteur !== 'string') {
+            return "Le sous-secteur doit être une chaîne de caractères";
+        }
+
         if(data.montantRecherche == null || isNaN(data.montantRecherche) || data.montantRecherche < 0) return "Le montant recherché doit être un nombre positif";
         if(!data.financement || !FINANCEMENT.includes(data.financement)) return "Le type de financement est invalide";
         if(!data.niveauMaturite || !NIVEAU_MATURITE.includes(data.niveauMaturite)) return "Le niveau de maturité est invalide";

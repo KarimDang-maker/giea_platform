@@ -4,18 +4,51 @@ const { DocumentProjetModel } = require('../models/documentProjet.model');
 const { MembreProjetModel } = require('../models/membreProjet.model');
 const storageService = require('./storage.service');
 
+// Import du service de catégories pour gérer les secteurs d'activité
+const categoryService = require('../../categories/services/category.service');
+
 class ProjetService {
+    /**
+     * Résout le secteur d'activité : récupère l'ID existant ou crée une nouvelle catégorie.
+     * @private
+     */
+    async _resolveSecteur(secteurData) {
+        if (!secteurData) return null;
+
+        // Si c'est déjà un objet avec un ID, on le renvoie tel quel
+        if (typeof secteurData === 'object' && secteurData.id) {
+            return { id: secteurData.id, name: secteurData.name };
+        }
+
+        // Sinon (string ou objet sans ID), on demande au module catégorie de gérer
+        const nomSecteur = typeof secteurData === 'string' ? secteurData : secteurData.name;
+        const categorie = await categoryService.getOrCreateByName(nomSecteur, 'project_sector');
+        
+        return { id: categorie.id, name: categorie.name };
+    }
+
     /**
      * Logique pour la création d'un projet
      */
     async creerUnProjet(data, porteurId, nomPorteur) {
+        // 1. Résoudre le secteur d'activité (trouver l'ID ou créer la catégorie)
+        const secteurResolu = await this._resolveSecteur(data.secteur);
+
+        // 2. Si une sous-catégorie est fournie, on tente de l'ajouter au référentiel global
+        if (data.sousSecteur && secteurResolu.id) {
+            await categoryService.addSubCategory(secteurResolu.id, data.sousSecteur).catch(err => {
+                console.warn(`[LOG] Sous-catégorie "${data.sousSecteur}" déjà existante ou erreur mineure :`, err.message);
+            });
+        }
+
         // Validation des données d'entrée via le modèle
-        const erreur = ProjetModel.valide(data);
+        const erreur = ProjetModel.valide({ ...data, secteur: secteurResolu });
         if (erreur) throw new Error(erreur);
 
         // 1. On prépare l'objet via le modèle (génère l'ID, structure les données)
         const nouveauProjet = new ProjetModel({
             ...data,
+            secteur: secteurResolu,
             porteurId,
             nomPorteur
         });
@@ -101,6 +134,15 @@ class ProjetService {
     }
 
     /**
+     * Lister les projets par secteur d'activité
+     * @param {string} secteurId - L'ID de la catégorie
+     */
+    async listerProjetsParSecteur(secteurId) {
+        // Le repository doit supporter le filtrage sur les champs imbriqués (secteur.id)
+        return await projetRepository.findByCriteria({ 'secteur.id': secteurId });
+    }
+
+    /**
      * Ajoute un document à un projet (Upload Storage + Update Firestore)
      * @param {string} projetId 
      * @param {Object} file - Fichier Multer
@@ -178,8 +220,33 @@ class ProjetService {
      */
     async mettreAJourInfosProjet(projetId, data) {
         // On ne permet pas de modifier le statut ou les tableaux via cette méthode simple
-        const { statut, equipe, documents, suggestions, ...infosUpdate } = data;
+        const { statut, equipe, documents, suggestions, secteur, sousSecteur, ...infosUpdate } = data;
         
+        // Si le secteur est présent dans la mise à jour, on le résout
+        if (secteur) {
+            infosUpdate.secteur = await this._resolveSecteur(secteur);
+        }
+
+        // Gestion de la sous-catégorie lors d'une mise à jour
+        if (sousSecteur) {
+            // On récupère l'ID du secteur (soit le nouveau, soit l'actuel du projet)
+            let idSecteur = infosUpdate.secteur?.id;
+            
+            if (!idSecteur) {
+                const projetActuel = await this.obtenirProjet(projetId);
+                idSecteur = projetActuel.secteur?.id;
+            }
+
+            if (idSecteur) {
+                await categoryService.addSubCategory(idSecteur, sousSecteur).catch(err => {
+                    console.warn(`[LOG] Update sous-cat :`, err.message);
+                });
+            }
+            
+            // On ajoute le nom de la sous-catégorie dans l'objet de mise à jour du projet
+            infosUpdate.sousSecteur = sousSecteur;
+        }
+
         return await projetRepository.update(projetId, infosUpdate);
     }
 

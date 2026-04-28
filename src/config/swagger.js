@@ -140,7 +140,20 @@ const options = {
               type: 'string', 
               example: 'Un projet visant à transformer les déchets plastiques en briques de construction abordables.' 
             },
-            secteur: { type: 'string', example: 'Environnement' },
+            secteur: { 
+              type: 'object',
+              properties: {
+                id: { type: 'string', example: 'cat_123', description: 'ID de la catégorie (null si création)', nullable: true },
+                name: { type: 'string', example: 'Environnement', description: 'Nom du secteur' }
+              },
+              required: ['name']
+            },
+            sousSecteur: {
+              type: 'string',
+              example: 'Recyclage plastique',
+              description: 'Sous-catégorie précise du projet',
+              nullable: true
+            },
             montantRecherche: { type: 'number', example: 15000000 },
             financement: { 
               type: 'string', 
@@ -203,6 +216,7 @@ const options = {
     `${__dirname}/../modules/categories/routes/*.js`,
     `${__dirname}/../modules/authentication/routes/*.js`,
     `${__dirname}/../modules/gestion_projets/routes/*.js`,
+    `${__dirname}/../modules/gestion_projets/docs/*.js`,
     `${__dirname}/../modules/marketplace/routes/*.js`,
   ],
 };
