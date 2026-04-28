@@ -53,6 +53,10 @@ class User {
     this.emailVerificationToken = data.emailVerificationToken || '';
     this.emailVerificationExpire = data.emailVerificationExpire || null;
     
+    // OTP for password reset (new OTP-based implementation)
+    this.resetPasswordOTP = data.resetPasswordOTP || '';
+    this.resetPasswordOTPExpire = data.resetPasswordOTPExpire || null;
+    
     // Activity & Status
     this.lastLogin = data.lastLogin || null;
     this.isActive = data.isActive !== false ? true : false;
@@ -91,6 +95,8 @@ class User {
     delete profile.password;
     delete profile.resetPasswordToken;
     delete profile.resetPasswordExpire;
+    delete profile.resetPasswordOTP;
+    delete profile.resetPasswordOTPExpire;
     delete profile.emailVerificationToken;
     delete profile.emailVerificationExpire;
     return profile;

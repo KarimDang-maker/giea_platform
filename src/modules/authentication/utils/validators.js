@@ -25,11 +25,19 @@ const authValidationRules = {
   forgotPassword: [body('email').isEmail().normalizeEmail().withMessage('Valid email is required')],
 
   resetPassword: [
-    body('token').notEmpty().withMessage('Reset token is required'),
     body('newPassword')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/),
+    body('confirmPassword')
+      .isLength({ min: 8 })
+      .withMessage('Confirm password must be at least 8 characters')
+      .custom((value, { req }) => {
+        if (value !== req.body.newPassword) {
+          throw new Error('Passwords do not match');
+        }
+        return true;
+      }),
   ],
 
   updateProfile: [
