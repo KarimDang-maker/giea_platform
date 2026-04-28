@@ -2,8 +2,8 @@
  * @swagger
  * /api/projet/creer-projet:
  *   post:
- *     summary: Créer un nouveau projet (Entrepreneur/Admin)
- *     description: Permet à un utilisateur connecté de créer un projet. Le secteur est automatiquement normalisé ou créé.
+ *     summary: Créer un nouveau projet
+ *     description: Permet à un utilisateur de créer un projet. Le secteur et le sous-secteur sont automatiquement normalisés ou créés dans le référentiel global.
  *     tags: [Projets]
  *     security:
  *       - bearerAuth: []
@@ -26,7 +26,7 @@
  * @swagger
  * /api/projet/liste-projets:
  *   get:
- *     summary: Lister mes projets (Entrepreneur/Admin)
+ *     summary: Lister mes projets (Entrepreneur)
  *     description: Récupère uniquement les projets dont l'utilisateur est le porteur.
  *     tags: [Projets]
  *     security:
@@ -113,6 +113,18 @@
  *               titre:
  *                 type: string
  *               description:
+ *                 type: string
+ *               secteur:
+ *                 type: string
+ *                 description: Nom du nouveau secteur ou ID existant
+ *               sousSecteur:
+ *                 type: string
+ *                 description: Nom de la sous-catégorie
+ *               montantRecherche:
+ *                 type: number
+ *               financement:
+ *                 type: string
+ *               niveauMaturite:
  *                 type: string
  *     responses:
  *       200:
@@ -311,6 +323,9 @@
  *             properties:
  *               statut:
  *                 type: string
+ *               suggestion:
+ *                 type: string
+ *                 description: Commentaire de l'admin expliquant le changement de statut
  *     responses:
  *       200:
  *         description: Statut changé

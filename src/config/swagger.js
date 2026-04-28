@@ -148,6 +148,12 @@ const options = {
               },
               required: ['name']
             },
+            sousSecteur: {
+              type: 'string',
+              example: 'Recyclage plastique',
+              description: 'Sous-catégorie précise du projet',
+              nullable: true
+            },
             montantRecherche: { type: 'number', example: 15000000 },
             financement: { 
               type: 'string', 

@@ -20,12 +20,20 @@ class CategoryService {
   }
 
   async createCategory(categoryData) {
-    return await categoryRepository.create(categoryData);
+    const data = {
+      ...categoryData,
+      name: this._normalizeName(categoryData.name),
+      subCategories: categoryData.subCategories || [],
+      status: categoryData.status || 'active'
+    };
+    return await categoryRepository.create(data);
   }
 
   async updateCategory(id, categoryData) {
     await this.getCategoryById(id);
-    return await categoryRepository.update(id, categoryData);
+    const data = { ...categoryData };
+    if (data.name) data.name = this._normalizeName(data.name);
+    return await categoryRepository.update(id, data);
   }
 
   async deleteCategory(id) {
@@ -34,22 +42,24 @@ class CategoryService {
   }
 
   async addSubCategory(categoryId, subCategoryName) {
+    const normalizedSubName = this._normalizeName(subCategoryName);
     const category = await this.getCategoryById(categoryId);
     const subCategories = category.subCategories || [];
     
-    if (subCategories.includes(subCategoryName)) {
+    if (subCategories.includes(normalizedSubName)) {
       const error = new Error('This subcategory already exists');
       error.statusCode = 400;
       throw error;
     }
 
-    subCategories.push(subCategoryName);
+    subCategories.push(normalizedSubName);
     return await categoryRepository.update(categoryId, { subCategories });
   }
 
   async removeSubCategory(categoryId, subCategoryName) {
+    const normalizedSubName = this._normalizeName(subCategoryName);
     const category = await this.getCategoryById(categoryId);
-    const subCategories = (category.subCategories || []).filter(sub => sub !== subCategoryName);
+    const subCategories = (category.subCategories || []).filter(sub => sub !== normalizedSubName);
     return await categoryRepository.update(categoryId, { subCategories });
   }
 
@@ -61,8 +71,6 @@ class CategoryService {
     if (!name) return "";
     return name
       .trim()
-      .normalize("NFD") // Sépare les caractères de leurs accents
-      .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
       .toLowerCase()
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -91,6 +99,7 @@ class CategoryService {
       name: normalizedName,
       type: type,
       status: 'active', // Statut par défaut pour les catégories créées à la volée.
+      subCategories: [] // Initialisation explicite du tableau des sous-catégories
     };
     return await this.createCategory(newCategoryData); // Utilise la méthode createCategory existante
   }

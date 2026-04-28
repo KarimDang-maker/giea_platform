@@ -31,6 +31,7 @@ class ProjetModel {
             };
         }
 
+        this.sousSecteur = data.sousSecteur || null;
         this.montantRecherche = data.montantRecherche ? Number(data.montantRecherche) : 0;
         
         // Références aux constantes déclarées en haut du fichier
@@ -60,6 +61,10 @@ class ProjetModel {
             (typeof s === 'object' && s.name && s.name.trim().length > 0)
         );
         if(!secteurPresent) return "Le secteur d'activité du projet est requis";
+
+        if (data.sousSecteur && typeof data.sousSecteur !== 'string') {
+            return "Le sous-secteur doit être une chaîne de caractères";
+        }
 
         if(data.montantRecherche == null || isNaN(data.montantRecherche) || data.montantRecherche < 0) return "Le montant recherché doit être un nombre positif";
         if(!data.financement || !FINANCEMENT.includes(data.financement)) return "Le type de financement est invalide";
