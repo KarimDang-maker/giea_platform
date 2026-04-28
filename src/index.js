@@ -89,6 +89,11 @@ app.get('/auth-callback', (req, res) => {
   res.sendFile('public/auth-callback.html', { root: __dirname });
 });
 
+// Reset Password Route - Serve reset password form
+app.get('/reset-password.html', (req, res) => {
+  res.sendFile('public/reset-password.html', { root: __dirname });
+});
+
 // Swagger Documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   swaggerOptions: {

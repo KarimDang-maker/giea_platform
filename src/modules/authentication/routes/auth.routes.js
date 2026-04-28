@@ -198,9 +198,9 @@ router.post('/logout', authController.logout);
  * @swagger
  * /api/auth/forgot-password:
  *   post:
- *     summary: Request password reset
+ *     summary: Request password reset - Send OTP via email
  *     tags:
- *       - Authentication
+ *       - Authentication (OTP-based Password Reset)
  *     requestBody:
  *       required: true
  *       content:
@@ -213,11 +213,12 @@ router.post('/logout', authController.logout);
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: user@example.com
  *     responses:
  *       200:
- *         description: Password reset email sent
- *       404:
- *         description: User not found
+ *         description: OTP sent to email if account exists
+ *       400:
+ *         description: Email is required
  */
 router.post(
   '/forgot-password',
@@ -228,11 +229,15 @@ router.post(
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /api/auth/verify-password-otp:
  *   post:
- *     summary: Reset password with token
+ *     summary: Verify OTP for password reset
  *     tags:
- *       - Authentication
+ *       - Authentication (OTP-based Password Reset)
+ *     description: |
+ *       Verify the OTP sent to user's email.
+ *       Email is retrieved from session (stored in Step 1).
+ *       User can then proceed to reset password.
  *     requestBody:
  *       required: true
  *       content:
@@ -240,30 +245,93 @@ router.post(
  *           schema:
  *             type: object
  *             required:
- *               - email
- *               - token
- *               - newPassword
+ *               - otp
  *             properties:
- *               email:
+ *               otp:
  *                 type: string
- *                 format: email
- *               token:
- *                 type: string
+ *                 example: "123456"
+ *                 description: 6-digit OTP sent to email
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid or expired OTP, or session expired
+ */
+router.post('/verify-password-otp', authController.verifyPasswordOTP);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password using OTP
+ *     tags:
+ *       - Authentication (OTP-based Password Reset)
+ *     description: |
+ *       Reset password after OTP verification.
+ *       Email and verified OTP are retrieved from session.
+ *       Steps: 1) forgot-password → 2) verify-password-otp → 3) reset-password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *               - confirmPassword
+ *             properties:
  *               newPassword:
  *                 type: string
  *                 format: password
+ *                 example: NewPass123!
+ *                 description: New password (minimum 8 characters)
+ *               confirmPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: NewPass123!
+ *                 description: Confirm new password (must match)
  *     responses:
  *       200:
  *         description: Password reset successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
  *       400:
- *         description: Invalid or expired token
+ *         description: Invalid passwords, session expired, or verification not completed
  */
-router.post(
-  '/reset-password',
-  authValidationRules.resetPassword,
-  handleAuthValidationErrors,
-  authController.resetPassword
-);
+router.post('/reset-password', authController.resetPasswordWithOTP);
+
+/**
+ * ============================================
+ * ❌ OLD TOKEN-BASED PASSWORD RESET ROUTES (COMMENTED OUT - DO NOT USE)
+ * ============================================
+ */
+
+/*
+// Old route: Get password reset link from email
+router.get('/verify-password-reset', authController.verifyPasswordResetLink);
+
+// Old route: Verify password reset token (mobile)
+router.post('/verify-password-reset-token', authController.verifyPasswordResetToken);
+
+// Old route: Reset password from link
+router.post('/reset-password-from-link', authController.resetPasswordFromLink);
+*/
 
 /**
  * @swagger
