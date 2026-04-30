@@ -1,9 +1,10 @@
 class NotificationEvent {
-  constructor({ type , targets, data }) {
+  constructor({ type, targets, data, category = "application" }) {
     this.id = crypto.randomUUID(); // Identifiant unique pour le tracking/logs
-    this.type = type;              // EX: 'USER_REGISTERED', 'PROFILE_INCOMPLETE'
+    this.type = type; // EX: 'USER_REGISTERED', 'PROFILE_INCOMPLETE'
+    this.category = "email" | "application" // define if the notification is for email or application
     this.targets = Array.isArray(targets) ? targets : [targets]; // Toujours une liste
-    this.data = data;              // Les variables brutes (ex: { firstName: 'John' })
+    this.data = data; // Les variables brutes (ex: { firstName: 'John' })
     this.timestamp = Date.now();
   }
 }
