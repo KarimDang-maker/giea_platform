@@ -9,36 +9,6 @@ const notificationController = require('../controllers/notification.controller')
  *   description: Notification management operations
  */
 
-/**
- * @swagger
- * /api/notifications:
- *   post:
- *     summary: Create a new notification
- *     tags: [Notifications]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - userId
- *               - title
- *               - message
- *             properties:
- *               userId:
- *                 type: string
- *               title:
- *                 type: string
- *               message:
- *                 type: string
- *     responses:
- *       201:
- *         description: Notification created successfully
- *       500:
- *         description: Server error
- */
-router.post('/', notificationController.createNotification);
 
 /**
  * @swagger

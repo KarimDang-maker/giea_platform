@@ -1,11 +1,9 @@
 const notificationRepository = require('../repositories/notification.repository');
-const Notification = require('../models/notification.model');
+const { Notifications } = require('../models/notification.model');
 
 class NotificationService {
   async createNotification(data) {
-    const notification = new Notification(data);
-    
-    // Convert to plain object for Firestore
+    const notification = new Notifications(data);
     const notificationData = {
         userId: notification.userId,
         title: notification.title,
