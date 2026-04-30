@@ -15,15 +15,18 @@ const worker = new Worker('notificationQueue', async (job) => {
         case NotificationType.COMPLETE_PROFILE:
             if (event.targets && Array.isArray(event.targets)) {
                 for (const targetId of event.targets) {
+                    const name = event.data.firstName ? ` ${event.data.firstName}` : '';
+                    const date = event.data.date ? new Date(event.data.date).toLocaleDateString('fr-FR') : '';
+                    
                     const notificationData = {
                         userId: targetId,
                         title: "Complete your profile",
-                        message: "Please complete your profile."
+                        message: `welcome ${name} ! Please complete your profile. (Sent on: ${date})`
                     };
                     await notificationService.createNotification(notificationData);
                 }
             }
-        break;
+            break;
     }
 }, { connection: redisConnection });
 
