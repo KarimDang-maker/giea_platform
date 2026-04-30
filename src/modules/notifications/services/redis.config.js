@@ -9,9 +9,9 @@ const redis = new Redis({
 // Empêche le plantage brutal de l'application si Redis n'est pas lancé
 redis.on('error', (err) => {
     if (err.code === 'ECONNREFUSED') {
-        console.error('❌ Impossible de se connecter à Redis. Vérifiez que le serveur Redis est lancé sur le port 6379.');
+        console.error('Impossible de se connecter à Redis. Vérifiez que le serveur Redis est lancé sur le port 6379.');
     } else {
-        console.error('⚠️ Erreur Redis:', err.message);
+        console.error('Erreur Redis:', err.message);
     }
 });
 
