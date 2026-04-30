@@ -191,6 +191,178 @@ const options = {
             },
           },
         },
+        Statistics: {
+          type: 'object',
+          properties: {
+            userStatistics: {
+              type: 'object',
+              properties: {
+                totalUsers: { type: 'integer', example: 150 },
+                activeUsers: { type: 'integer', example: 120 },
+                usersByRole: {
+                  type: 'object',
+                  properties: {
+                    student: { type: 'integer' },
+                    entrepreneur: { type: 'integer' },
+                    company: { type: 'integer' },
+                    investor: { type: 'integer' },
+                    mentor: { type: 'integer' },
+                    admin: { type: 'integer' }
+                  }
+                },
+                newUsersThisMonth: { type: 'integer', example: 25 },
+                verifiedUsers: { type: 'integer', example: 145 },
+                unverifiedUsers: { type: 'integer', example: 5 }
+              }
+            },
+            projectStatistics: {
+              type: 'object',
+              properties: {
+                totalProjects: { type: 'integer', example: 45 },
+                projectsByStatus: {
+                  type: 'object',
+                  properties: {
+                    soumis: { type: 'integer' },
+                    en_evaluation: { type: 'integer' },
+                    en_revision: { type: 'integer' },
+                    bancable: { type: 'integer' },
+                    rejete: { type: 'integer' },
+                    archivé: { type: 'integer' }
+                  }
+                },
+                projectsByFunding: {
+                  type: 'object',
+                  properties: {
+                    subvention: { type: 'integer' },
+                    investissement: { type: 'integer' },
+                    mixte: { type: 'integer' }
+                  }
+                },
+                totalFundingRequested: { type: 'number', example: 5000000 },
+                averageFundingPerProject: { type: 'number', example: 111111.11 }
+              }
+            },
+            marketplaceStatistics: {
+              type: 'object',
+              properties: {
+                totalCompanies: { type: 'integer', example: 30 },
+                totalProducts: { type: 'integer', example: 85 },
+                totalServices: { type: 'integer', example: 45 },
+                totalNews: { type: 'integer', example: 120 }
+              }
+            },
+            generatedAt: { type: 'string', format: 'date-time' },
+            period: { type: 'string', enum: ['daily', 'weekly', 'monthly', 'yearly'] }
+          }
+        },
+        Report: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', readOnly: true },
+            title: { type: 'string', example: 'Monthly Activity Report' },
+            description: { type: 'string', example: 'Platform activity analysis' },
+            reportType: { type: 'string', enum: ['activity', 'analytics', 'custom'] },
+            scope: { type: 'string', enum: ['platform', 'users', 'projects', 'marketplace'] },
+            periodStart: { type: 'string', format: 'date-time' },
+            periodEnd: { type: 'string', format: 'date-time' },
+            summary: { type: 'string' },
+            metrics: { type: 'object' },
+            insights: {
+              type: 'array',
+              items: { type: 'string' }
+            },
+            status: { type: 'string', enum: ['generated', 'scheduled', 'archived'] },
+            format: { type: 'string', enum: ['json', 'csv', 'pdf'] },
+            generatedBy: { type: 'string', format: 'email' },
+            generatedAt: { type: 'string', format: 'date-time', readOnly: true },
+            isScheduled: { type: 'boolean' },
+            recipients: {
+              type: 'array',
+              items: { type: 'string', format: 'email' }
+            },
+            frequency: { type: 'string', enum: ['daily', 'weekly', 'monthly'] }
+          }
+        },
+        Activity: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', readOnly: true },
+            userId: { type: 'string' },
+            type: { type: 'string', example: 'project_created', description: 'Type of activity' },
+            title: { type: 'string', example: 'New Project Created' },
+            description: { type: 'string', example: 'You created a new project' },
+            entityType: { type: 'string', enum: ['project', 'resource', 'comment', 'message', 'profile'] },
+            entityId: { type: 'string' },
+            actionBy: { type: 'string' },
+            actionByName: { type: 'string' },
+            relatedData: { type: 'object' },
+            timestamp: { type: 'string', format: 'date-time', readOnly: true },
+            isRead: { type: 'boolean', default: false },
+            metadata: { type: 'object' }
+          }
+        },
+        Recommendation: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', readOnly: true },
+            userId: { type: 'string' },
+            type: { type: 'string', example: 'project', description: 'Type of recommendation' },
+            title: { type: 'string', example: 'Explore Collaborative Projects' },
+            description: { type: 'string', example: 'Join projects matching your skills' },
+            reason: { type: 'string', example: 'Based on your profile' },
+            targetId: { type: 'string' },
+            targetType: { type: 'string' },
+            relevanceScore: { type: 'integer', minimum: 0, maximum: 100, example: 85 },
+            metadata: { type: 'object' },
+            isDismissed: { type: 'boolean', default: false },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            expiresAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Dashboard: {
+          type: 'object',
+          properties: {
+            userId: { type: 'string' },
+            userName: { type: 'string' },
+            userRole: { type: 'string', enum: ['student', 'entrepreneur', 'company', 'investor', 'mentor', 'admin'] },
+            recentActivities: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Activity' }
+            },
+            recommendations: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Recommendation' }
+            },
+            quickLinks: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  path: { type: 'string' },
+                  icon: { type: 'string' }
+                }
+              }
+            },
+            statistics: {
+              type: 'object',
+              properties: {
+                totalProjects: { type: 'integer' },
+                totalResources: { type: 'integer' },
+                profileCompletion: { type: 'integer' },
+                role: { type: 'string' },
+                joinedDate: { type: 'string', format: 'date-time' }
+              }
+            },
+            notifications: {
+              type: 'array',
+              items: { type: 'object' }
+            },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true }
+          }
+        },
       },
     },
     security: [
@@ -204,6 +376,8 @@ const options = {
     `${__dirname}/../modules/authentication/routes/*.js`,
     `${__dirname}/../modules/gestion_projets/routes/*.js`,
     `${__dirname}/../modules/marketplace/routes/*.js`,
+    `${__dirname}/../modules/report/routes/*.js`,
+    `${__dirname}/../modules/dashboard/routes/*.js`,
   ],
 };
 

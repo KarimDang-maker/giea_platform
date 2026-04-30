@@ -33,4 +33,9 @@ const initializeFirestore = () => {
   }
 };
 
-module.exports = { initializeFirestore, admin };
+// Create a getter that returns the firestore instance
+const getDb = () => {
+  return admin.firestore();
+};
+
+module.exports = { initializeFirestore, admin, get db() { return getDb(); } };
