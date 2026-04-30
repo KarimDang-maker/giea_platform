@@ -21,6 +21,7 @@ const db = initializeFirestore();
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
 const { categoryRoutes } = require('./modules/categories');
+const { notificationRoutes } = require('./modules/notifications');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -118,6 +119,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/projet', projetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -131,7 +133,8 @@ app.get('/', (req, res) => {
       users: '/api/users',
       categories: '/api/categories',
       health: '/health',
-      projet: '/api/projet'
+      projet: '/api/projet',
+      notifications: '/api/notifications'
     },
   });
 });
