@@ -67,15 +67,16 @@ class ActivityRepository {
 
   /**
    * Get activities by type
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async getActivitiesByType(userId, type, limit = 20) {
     try {
       const db = admin.firestore();
+      
+      // Fetch all activities for user without type filter
       const snapshot = await db
         .collection('activities')
         .where('userId', '==', userId)
-        .where('type', '==', type)
-        .limit(limit * 3)
         .get();
 
       const activities = [];
@@ -85,14 +86,17 @@ class ActivityRepository {
         activities.push(data);
       });
       
-      // Sort by timestamp descending in application code
-      activities.sort((a, b) => {
+      // Filter in-memory by type
+      const filtered = activities.filter(activity => activity.type === type);
+      
+      // Sort by timestamp descending
+      filtered.sort((a, b) => {
         const timeA = new Date(a.timestamp || 0).getTime();
         const timeB = new Date(b.timestamp || 0).getTime();
         return timeB - timeA;
       });
       
-      return activities.slice(0, limit);
+      return filtered.slice(0, limit);
     } catch (error) {
       console.error('Error fetching activities by type:', error);
       throw error;
@@ -101,14 +105,16 @@ class ActivityRepository {
 
   /**
    * Get unread activities
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async getUnreadActivities(userId) {
     try {
       const db = admin.firestore();
+      
+      // Fetch all activities for user
       const snapshot = await db
         .collection('activities')
         .where('userId', '==', userId)
-        .where('isRead', '==', false)
         .get();
 
       const activities = [];
@@ -118,14 +124,17 @@ class ActivityRepository {
         activities.push(data);
       });
       
-      // Sort by timestamp descending in application code
-      activities.sort((a, b) => {
+      // Filter in-memory for unread activities
+      const unread = activities.filter(activity => activity.isRead !== true);
+      
+      // Sort by timestamp descending
+      unread.sort((a, b) => {
         const timeA = new Date(a.timestamp || 0).getTime();
         const timeB = new Date(b.timestamp || 0).getTime();
         return timeB - timeA;
       });
       
-      return activities;
+      return unread;
     } catch (error) {
       console.error('Error fetching unread activities:', error);
       throw error;

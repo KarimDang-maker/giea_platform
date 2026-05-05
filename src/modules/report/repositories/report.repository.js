@@ -49,47 +49,15 @@ class ReportRepository {
 
   /**
    * Get all reports (optionally filtered by status, type, or scope)
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async findAll(filters = {}) {
     try {
       const db = admin.firestore();
-      let query = db.collection(REPORTS_COLLECTION);
-
-      if (filters.status) {
-        query = query.where('status', '==', filters.status);
-      }
-
-      if (filters.reportType) {
-        query = query.where('reportType', '==', filters.reportType);
-      }
-
-      if (filters.scope) {
-        query = query.where('scope', '==', filters.scope);
-      }
-
-      query = query.orderBy('generatedAt', 'desc');
-
-      const snapshot = await query.get();
-
-      if (snapshot.empty) {
-        return [];
-      }
-
-      return snapshot.docs.map(doc => new ReportModel(doc.data()));
-    } catch (error) {
-      throw new Error(`Error getting all reports: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get reports by type
-   */
-  async findByType(reportType) {
-    try {
-      const db = admin.firestore();
+      
+      // Fetch all reports without filters
       const snapshot = await db
         .collection(REPORTS_COLLECTION)
-        .where('reportType', '==', reportType)
         .orderBy('generatedAt', 'desc')
         .get();
 
@@ -97,7 +65,46 @@ class ReportRepository {
         return [];
       }
 
-      return snapshot.docs.map(doc => new ReportModel(doc.data()));
+      // Apply filters in-memory
+      let reports = snapshot.docs.map(doc => new ReportModel(doc.data()));
+
+      if (filters.status) {
+        reports = reports.filter(report => report.status === filters.status);
+      }
+
+      if (filters.reportType) {
+        reports = reports.filter(report => report.reportType === filters.reportType);
+      }
+
+      if (filters.scope) {
+        reports = reports.filter(report => report.scope === filters.scope);
+      }
+
+      return reports;
+    } catch (error) {
+      throw new Error(`Error getting all reports: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get reports by type
+   * Uses in-memory filtering to avoid index requirement
+   */
+  async findByType(reportType) {
+    try {
+      const db = admin.firestore();
+      const snapshot = await db
+        .collection(REPORTS_COLLECTION)
+        .orderBy('generatedAt', 'desc')
+        .get();
+
+      if (snapshot.empty) {
+        return [];
+      }
+
+      return snapshot.docs
+        .map(doc => new ReportModel(doc.data()))
+        .filter(report => report.reportType === reportType);
     } catch (error) {
       throw new Error(`Error getting reports by type: ${error.message}`);
     }
@@ -141,21 +148,22 @@ class ReportRepository {
 
   /**
    * Get scheduled reports for distribution
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async getScheduledReports() {
     try {
       const db = admin.firestore();
       const snapshot = await db
         .collection(REPORTS_COLLECTION)
-        .where('isScheduled', '==', true)
-        .where('status', '==', 'scheduled')
         .get();
 
       if (snapshot.empty) {
         return [];
       }
 
-      return snapshot.docs.map(doc => new ReportModel(doc.data()));
+      return snapshot.docs
+        .map(doc => new ReportModel(doc.data()))
+        .filter(report => report.isScheduled === true && report.status === 'scheduled');
     } catch (error) {
       throw new Error(`Error getting scheduled reports: ${error.message}`);
     }
@@ -163,25 +171,35 @@ class ReportRepository {
 
   /**
    * Archive old reports
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async archiveOldReports(days = 180) {
     try {
       const db = admin.firestore();
       const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
+      // Fetch all reports
       const snapshot = await db
         .collection(REPORTS_COLLECTION)
-        .where('generatedAt', '<', cutoffDate)
-        .where('status', '==', 'generated')
         .get();
 
+      // Filter in-memory for reports older than cutoffDate with status 'generated'
+      const reportsToArchive = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        const reportDate = data.generatedAt instanceof admin.firestore.Timestamp 
+          ? data.generatedAt.toDate() 
+          : new Date(data.generatedAt);
+        return reportDate < cutoffDate && data.status === 'generated';
+      });
+
+      // Archive in batch
       const batch = db.batch();
-      snapshot.docs.forEach(doc => {
-        batch.update(doc.ref, { status: 'archived' });
+      reportsToArchive.forEach(doc => {
+        batch.update(doc.ref, { status: 'archived', updatedAt: new Date() });
       });
 
       await batch.commit();
-      return snapshot.docs.length;
+      return reportsToArchive.length;
     } catch (error) {
       throw new Error(`Error archiving old reports: ${error.message}`);
     }

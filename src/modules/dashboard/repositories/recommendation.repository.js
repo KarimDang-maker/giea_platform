@@ -34,49 +34,16 @@ class RecommendationRepository {
 
   /**
    * Get active recommendations for user
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async getActiveRecommendations(userId, limit = 5) {
     try {
       const db = admin.firestore();
+      
+      // Fetch all recommendations for user without filters
       const snapshot = await db
         .collection('recommendations')
         .where('userId', '==', userId)
-        .where('isDismissed', '==', false)
-        .limit(limit * 3)
-        .get();
-
-      const recommendations = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        data.id = doc.id;
-        // Filter expired recommendations
-        if (!data.expiresAt || new Date(data.expiresAt) > new Date()) {
-          recommendations.push(data);
-        }
-      });
-      
-      // Sort by relevance score descending in application code
-      recommendations.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
-      
-      return recommendations.slice(0, limit);
-    } catch (error) {
-      console.error('Error fetching active recommendations:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get recommendations by type
-   */
-  async getRecommendationsByType(userId, type, limit = 10) {
-    try {
-      const db = admin.firestore();
-      const snapshot = await db
-        .collection('recommendations')
-        .where('userId', '==', userId)
-        .where('type', '==', type)
-        .where('isDismissed', '==', false)
-        .limit(limit * 3)
         .get();
 
       const recommendations = [];
@@ -86,10 +53,58 @@ class RecommendationRepository {
         recommendations.push(data);
       });
       
-      // Sort by relevance score descending in application code
-      recommendations.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+      // Filter in-memory: not dismissed and not expired
+      const filtered = recommendations.filter(rec => {
+        if (rec.isDismissed === true) return false;
+        if (rec.expiresAt) {
+          const expiresAt = rec.expiresAt instanceof admin.firestore.Timestamp 
+            ? rec.expiresAt.toDate() 
+            : new Date(rec.expiresAt);
+          if (expiresAt <= new Date()) return false;
+        }
+        return true;
+      });
       
-      return recommendations.slice(0, limit);
+      // Sort by relevance score descending
+      filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+      
+      return filtered.slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching active recommendations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get recommendations by type
+   * Uses in-memory filtering to avoid composite index requirement
+   */
+  async getRecommendationsByType(userId, type, limit = 10) {
+    try {
+      const db = admin.firestore();
+      
+      // Fetch all recommendations for user without type filter
+      const snapshot = await db
+        .collection('recommendations')
+        .where('userId', '==', userId)
+        .get();
+
+      const recommendations = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        data.id = doc.id;
+        recommendations.push(data);
+      });
+      
+      // Filter in-memory: by type and not dismissed
+      const filtered = recommendations.filter(rec => 
+        rec.type === type && rec.isDismissed !== true
+      );
+      
+      // Sort by relevance score descending
+      filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+      
+      return filtered.slice(0, limit);
     } catch (error) {
       console.error('Error fetching recommendations by type:', error);
       throw error;
@@ -156,22 +171,38 @@ class RecommendationRepository {
 
   /**
    * Delete expired recommendations
+   * Uses in-memory filtering to avoid composite index requirement
    */
   async deleteExpiredRecommendations(userId) {
     try {
       const db = admin.firestore();
+      
+      // Fetch all recommendations for user
       const snapshot = await db
         .collection('recommendations')
         .where('userId', '==', userId)
-        .where('expiresAt', '<', new Date())
         .get();
 
+      const now = new Date();
       const batch = db.batch();
+      let deletedCount = 0;
+      
+      // Filter in-memory and delete expired ones
       snapshot.forEach((doc) => {
-        batch.delete(doc.ref);
+        const data = doc.data();
+        if (data.expiresAt) {
+          const expiresAt = data.expiresAt instanceof admin.firestore.Timestamp 
+            ? data.expiresAt.toDate() 
+            : new Date(data.expiresAt);
+          if (expiresAt < now) {
+            batch.delete(doc.ref);
+            deletedCount++;
+          }
+        }
       });
+      
       await batch.commit();
-      return snapshot.size;
+      return deletedCount;
     } catch (error) {
       console.error('Error deleting expired recommendations:', error);
       throw error;
