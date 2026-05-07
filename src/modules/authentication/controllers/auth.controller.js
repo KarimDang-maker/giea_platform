@@ -1,7 +1,7 @@
 const authService = require('../services/auth.service');
 const TokenService = require('../services/token.service');
 const { validationResult } = require('express-validator');
-const { notify } = require('../../notifications/middlewares/notify');
+const authenticationNotify = require('../../notifications/middlewares/authentication');
 
 /**
  * AuthController - Only handles HTTP request/response
@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
     });
 
     // Appel de la notification sans await (non-bloquant)
-    notify(user.id || user.uid || user._id);
+    authenticationNotify.completeProfile(user.id || user.uid || user._id);
 
     res.status(201).json({
       message: 'Registration successful. Please check your email to verify your account.',
