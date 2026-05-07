@@ -376,6 +376,18 @@ const options = {
             updatedAt: { type: 'string', format: 'date-time', readOnly: true }
           }
         },
+        Notification: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', readOnly: true },
+            userId: { type: 'string', nullable: true },
+            title: { type: 'string', example: 'Profile Incomplete' },
+            message: { type: 'string', example: 'Please complete your profile to access all features.' },
+            read: { type: 'boolean', default: false },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true }
+          }
+        },
       },
     },
     security: [
@@ -392,6 +404,7 @@ const options = {
     `${__dirname}/../modules/marketplace/routes/*.js`,
     `${__dirname}/../modules/report/routes/*.js`,
     `${__dirname}/../modules/dashboard/routes/*.js`,
+    `${__dirname}/../modules/notifications/routes/*.js`,
   ],
 };
 

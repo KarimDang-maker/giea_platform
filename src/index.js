@@ -21,6 +21,7 @@ const db = initializeFirestore();
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
 const { categoryRoutes } = require('./modules/categories');
+const { notificationRoutes } = require('./modules/notifications');
 const { statisticsRoutes, reportRoutes } = require('./modules/report/routes');
 const { dashboardRoutes, activityRoutes, recommendationRoutes } = require('./modules/dashboard/routes');
 
@@ -120,6 +121,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/projet', projetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Statistics and Reporting Routes (Admin Only)
 app.use('/api/statistics', statisticsRoutes);
@@ -143,6 +145,7 @@ app.get('/', (req, res) => {
       categories: '/api/categories',
       health: '/health',
       projet: '/api/projet',
+      notifications: '/api/notifications',
       statistics: '/api/statistics (admin only)',
       reports: '/api/reports (admin only)',
       dashboard: '/api/dashboard (authenticated users)',
