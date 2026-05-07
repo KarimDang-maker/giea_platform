@@ -26,6 +26,12 @@ const notificationController = require('../controllers/notification.controller')
  *     responses:
  *       200:
  *         description: A list of notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Notification'
  *       500:
  *         description: Server error
  */
@@ -47,6 +53,10 @@ router.get('/user/:userId', notificationController.getUserNotifications);
  *     responses:
  *       200:
  *         description: The notification data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Notification'
  *       404:
  *         description: Notification not found
  *       500:
@@ -70,6 +80,10 @@ router.get('/:id', notificationController.getNotificationById);
  *     responses:
  *       200:
  *         description: Notification marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Notification'
  *       404:
  *         description: Notification not found
  *       500:

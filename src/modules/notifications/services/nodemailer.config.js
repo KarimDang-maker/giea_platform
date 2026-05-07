@@ -16,13 +16,30 @@ const nodemailer = require("nodemailer");
 });
 */
 
-const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || "gmail",
-    auth: {
-        user: process.env.NODE_MAILER_EMAIL,
-        pass: process.env.NODE_MAILER_PASSWORD
-    }
-});
+
+const emailMode = process.env.NODE_MAILER_MODE;
+
+
+let transporter;
+
+emailMode == "service" ? transporter = nodemailer.createTransport({
+  service:"gmail",
+  auth:{
+    user:process.env.EMAIL_USER,
+    pass:process.env.EMAIL_PASSWORD
+  }
+}) : transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: parseInt(process.env.EMAIL_PORT) == 465 ? true : false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED
+  }
+})
 
 module.exports = transporter;
 
