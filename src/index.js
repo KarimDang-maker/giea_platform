@@ -22,6 +22,8 @@ const { authRoutes, userRoutes } = require('./modules/authentication/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
 const { categoryRoutes } = require('./modules/categories');
 const { notificationRoutes } = require('./modules/notifications');
+const { statisticsRoutes, reportRoutes } = require('./modules/report/routes');
+const { dashboardRoutes, activityRoutes, recommendationRoutes } = require('./modules/dashboard/routes');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -121,6 +123,15 @@ app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+// Statistics and Reporting Routes (Admin Only)
+app.use('/api/statistics', statisticsRoutes);
+app.use('/api/reports', reportRoutes);
+
+// Dashboard Routes (Authenticated Users)
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/dashboard/activities', activityRoutes);
+app.use('/api/dashboard/recommendations', recommendationRoutes);
+
 // Welcome route
 app.get('/', (req, res) => {
   res.json({
@@ -134,7 +145,12 @@ app.get('/', (req, res) => {
       categories: '/api/categories',
       health: '/health',
       projet: '/api/projet',
-      notifications: '/api/notifications'
+      notifications: '/api/notifications',
+      statistics: '/api/statistics (admin only)',
+      reports: '/api/reports (admin only)',
+      dashboard: '/api/dashboard (authenticated users)',
+      activities: '/api/dashboard/activities (authenticated users)',
+      recommendations: '/api/dashboard/recommendations (authenticated users)'
     },
   });
 });

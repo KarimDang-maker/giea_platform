@@ -1,0 +1,36 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "activities",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recommendations",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDismissed",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "relevanceScore",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ]
+}
