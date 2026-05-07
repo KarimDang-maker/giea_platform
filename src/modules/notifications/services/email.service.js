@@ -11,6 +11,7 @@ class EmailService {
      */
     async sendNotificationEmail(to, notification) {
         try {
+            console.log(`[EmailService] Preparing email for: ${to} (Type: ${notification.type})`);
             let subject = notification.title || "Nouvelle notification";
             let htmlContent = notification.message;
 

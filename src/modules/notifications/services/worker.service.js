@@ -31,12 +31,16 @@ const worker = new Worker('notificationQueue', async (job) => {
             break;
 
         case NotificationType.PLATFORM_EVENT_CREATED:
+            console.log('[Worker] Handling PLATFORM_EVENT_CREATED for event:', event.data.title);
             const allUsers = await userRepository.findAll();
+            console.log(`[Worker] Found ${allUsers.length} users to notify`);
+            
             const creatorId = event.data.creatorId;
             const creatorName = event.data.creatorName;
             const eventTitle = event.data.title;
 
             for (const user of allUsers) {
+                console.log(`[Worker] Notifying user: ${user.email} (${user.role})`);
                 let inAppTitle = `Nouvel événement : ${eventTitle}`;
                 let inAppMessage = `Bonjour ${user.firstName} ${user.lastName}, un nouvel événement a été publié : ${eventTitle}.`;
                 let emailSubject = `Invitation : ${eventTitle}`;
@@ -57,29 +61,41 @@ const worker = new Worker('notificationQueue', async (job) => {
                 }
 
                 // 1. Create in-app notification
-                const notificationData = {
-                    userId: user.email,
-                    title: inAppTitle,
-                    message: inAppMessage
-                };
-                await notificationService.createNotification(notificationData);
+                try {
+                    const notificationData = {
+                        userId: user.email,
+                        title: inAppTitle,
+                        message: inAppMessage
+                    };
+                    console.log(`[Worker] Attempting to create in-app notification for ${user.email}`);
+                    await notificationService.createNotification(notificationData);
+                    console.log(`[Worker] In-app notification created for ${user.email}`);
+                } catch (error) {
+                    console.error(`[Worker] Failed to create in-app notification for ${user.email}:`, error.message);
+                }
 
                 // 2. Send email notification
-                if (user.preferences && user.preferences.emailNotifications !== false) {
-                    await emailService.sendNotificationEmail(user.email, {
-                        type: event.type,
-                        category: 'email',
-                        title: emailSubject,
-                        message: emailIntro,
-                        data: {
-                            ...event.data,
-                            user: {
-                                firstName: user.firstName,
-                                lastName: user.lastName,
-                                role: user.role
+                try {
+                    if (user.preferences && user.preferences.emailNotifications !== false) {
+                        console.log(`[Worker] Attempting to send email to ${user.email}`);
+                        await emailService.sendNotificationEmail(user.email, {
+                            type: event.type,
+                            category: 'email',
+                            title: emailSubject,
+                            message: emailIntro,
+                            data: {
+                                ...event.data,
+                                user: {
+                                    firstName: user.firstName,
+                                    lastName: user.lastName,
+                                    role: user.role
+                                }
                             }
-                        }
-                    });
+                        });
+                        console.log(`[Worker] Email sent to ${user.email}`);
+                    }
+                } catch (error) {
+                    console.error(`[Worker] Failed to send email to ${user.email}:`, error.message);
                 }
             }
             break;

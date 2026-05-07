@@ -8,12 +8,15 @@ class EventService extends BaseService {
     }
 
     async create(data) {
+        console.log('[EventService] Creating new event:', data.title);
         const event = await super.create(data);
+        console.log('[EventService] Event created in DB, ID:', event.id);
         
         // Trigger notification for all users
         // We pass null or empty targets to signal "all users" to the middleware/worker
         // or handle fetching all users in the service or middleware.
         // I'll handle it in the worker for better scalability, but I need to signal it.
+        console.log('[EventService] Triggering notifications for event...');
         await eventNotify.eventCreated(event);
         
         return event;
