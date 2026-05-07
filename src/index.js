@@ -24,6 +24,7 @@ const { categoryRoutes } = require('./modules/categories');
 const { notificationRoutes } = require('./modules/notifications');
 const { statisticsRoutes, reportRoutes } = require('./modules/report/routes');
 const { dashboardRoutes, activityRoutes, recommendationRoutes } = require('./modules/dashboard/routes');
+const eventRoutes = require('./modules/events/routes/event.routes');
 
 // Utils
 const { rateLimitConfig } = require('./utils/helpers');
@@ -131,6 +132,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard/activities', activityRoutes);
 app.use('/api/dashboard/recommendations', recommendationRoutes);
+app.use('/api/events', eventRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

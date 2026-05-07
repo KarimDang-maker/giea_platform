@@ -219,6 +219,23 @@ class UserRepository {
   }
 
   /**
+   * Get all users
+   */
+  async findAll() {
+    try {
+      const db = admin.firestore();
+      const snapshot = await db.collection(USERS_COLLECTION).get();
+      const users = [];
+      snapshot.forEach((doc) => {
+        users.push(new User(doc.data()));
+      });
+      return users;
+    } catch (error) {
+      throw new Error(`Error finding all users: ${error.message}`);
+    }
+  }
+
+  /**
    * Helper: Convert User instance to Firestore-safe data
    */
   _prepareForFirestore(user) {

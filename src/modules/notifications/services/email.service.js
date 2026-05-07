@@ -54,6 +54,30 @@ class EmailService {
                         `;
                         break;
 
+                    case NotificationType.PLATFORM_EVENT_CREATED:
+                        const { user: userData, title: eventTitle, description: eventDesc, date: eventDate, location: eventLoc } = notification.data;
+                        const formattedDate = eventDate ? new Date(eventDate).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Date à préciser';
+                        
+                        htmlContent = `
+                            <div style="font-family: 'Times New Roman', Times, serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #c0c0c0; background-color: #fdfdfd; line-height: 1.6;">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #1a1a1a; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px; display: inline-block;">GIEA PLATFORM</h1>
+                                </div>
+                                <p>${notification.message}</p>
+                                <div style="background-color: #f0f0f0; padding: 20px; border-left: 5px solid #1a1a1a; margin: 25px 0;">
+                                    <h2 style="margin-top: 0; color: #333;">${eventTitle}</h2>
+                                    <p><strong>Date :</strong> ${formattedDate}</p>
+                                    <p><strong>Lieu :</strong> ${eventLoc || 'En ligne'}</p>
+                                </div>
+                                <p>${eventDesc || ''}</p>
+                                <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-style: italic; color: #666;">
+                                    Cordialement,<br>
+                                    L'équipe GIEA Platform
+                                </div>
+                            </div>
+                        `;
+                        break;
+
                     default:
                         // Format générique pour les catégories 'email' sans type spécifique défini
                         htmlContent = `

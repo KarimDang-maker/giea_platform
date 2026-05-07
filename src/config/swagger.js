@@ -376,6 +376,22 @@ const options = {
             updatedAt: { type: 'string', format: 'date-time', readOnly: true }
           }
         },
+        Event: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', readOnly: true },
+            title: { type: 'string', example: 'GIEA Annual Conference' },
+            description: { type: 'string', example: 'Discussion about African economic growth' },
+            date: { type: 'string', format: 'date-time' },
+            location: { type: 'string', example: 'Dakar, Senegal' },
+            type: { type: 'string', enum: ['conference', 'workshop', 'webinar', 'other'], example: 'conference' },
+            organizer: { type: 'string', example: 'GIEA Platform' },
+            creatorId: { type: 'string', readOnly: true },
+            creatorName: { type: 'string', readOnly: true },
+            createdAt: { type: 'string', format: 'date-time', readOnly: true },
+            updatedAt: { type: 'string', format: 'date-time', readOnly: true }
+          }
+        },
         Notification: {
           type: 'object',
           properties: {
@@ -405,6 +421,7 @@ const options = {
     `${__dirname}/../modules/report/routes/*.js`,
     `${__dirname}/../modules/dashboard/routes/*.js`,
     `${__dirname}/../modules/notifications/routes/*.js`,
+    `${__dirname}/../modules/events/routes/*.js`,
   ],
 };
 
