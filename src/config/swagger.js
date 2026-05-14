@@ -102,6 +102,120 @@ const options = {
             },
           },
         },
+        UtilisateurPublic: {
+          type: 'object',
+          description: 'Représentation publique d\'un utilisateur visible pour les administrateurs.',
+          properties: {
+            userId: { type: 'string', example: 'user_123' },
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            firstName: { type: 'string', example: 'John' },
+            lastName: { type: 'string', example: 'Doe' },
+            role: { type: 'string', example: 'admin' },
+            phone: { type: 'string', example: '+1234567890' },
+            location: { type: 'string', example: 'New York' },
+            bio: { type: 'string', example: 'Software developer' },
+            avatar: { type: 'string', format: 'uri', example: 'https://example.com/avatar.jpg' },
+            statusAccount: { type: 'string', example: 'approuvé' },
+            isActive: { type: 'boolean', example: true },
+            validatedBy: { type: 'string', example: 'admin@giea.com' },
+            validatedAt: { type: 'string', format: 'date-time', example: '2026-05-12T09:30:00Z' },
+            createdAt: { type: 'string', format: 'date-time', example: '2026-05-01T12:00:00Z' },
+            updatedAt: { type: 'string', format: 'date-time', example: '2026-05-10T15:00:00Z' },
+          },
+        },
+        DemandMessageAdmin: {
+          type: 'object',
+          description: 'Payload de message simple utilisé pour confirmer une action d\'administration.',
+          properties: {
+            action: {type: 'string', example: "approuver"},
+            message: { type: 'string', example: "Validation de la demande d'accès" },
+          },
+        },
+        ReactiveMessageAdmin: {
+          type: 'object',
+          description: 'Payload de message simple utilisé pour reactiver le compte.',
+          properties: {
+            message: { type: 'string', example: "Réactivation du compte" },
+          },
+        },
+        DemandRaisonAdmin: {
+          type: 'object',
+          description: 'Contient la raison fournie par l\'administrateur pour une action de suspension ou de rejet.',
+          properties: {
+            reason: { type: 'string', example: "Violation des conditions d'utilisation" },
+          },
+        },
+        DemandChangementRoleAdmin: {
+          type: 'object',
+          description: 'Corps de requête pour changer le rôle d\'un utilisateur.',
+          required: ['role'],
+          properties: {
+            role: {
+              type: 'string',
+              enum: ['étudiant', 'entrepreneur', 'entreprise', 'investisseur', 'mentor', 'admin'],
+              example: 'entrepreneur',
+            },
+          },
+        },
+        AdminCreateUser: {
+          type: 'object',
+          description: 'Création d\'un utilisateur par un administrateur. Le compte est créé directement approuvé et accessible. L\'admin renseigne l\'essentiel (identité, email, password, rôle). L\'utilisateur pourra remplir son profil complet après connexion.',
+          required: ['firstName', 'lastName', 'email', 'password', 'role'],
+          properties: {
+            firstName: { type: 'string', example: 'Alice' },
+            lastName: { type: 'string', example: 'Dupont' },
+            email: { type: 'string', format: 'email', example: 'alice@example.com' },
+            password: { type: 'string', format: 'password', example: 'TestPass123!' },
+            role: {
+              type: 'string',
+              enum: ['student', 'entrepreneur', 'company', 'investor', 'mentor', 'admin'],
+              example: 'admin',
+            },
+          },
+        },
+        DemandImportMembres: {
+          type: 'object',
+          description: 'Liste d\'emails à importer dans le fichier des membres GIEA.',
+          required: ['emails'],
+          properties: {
+            emails: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'email',
+                example: 'member@example.com',
+              },
+            },
+          },
+        },
+        ReponseStatutMembership: {
+          type: 'object',
+          description: 'Réponse de statut de membership GIEA pour un utilisateur donné.',
+          properties: {
+            userId: { type: 'string', example: 'user_123' },
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            isGieaMember: { type: 'boolean', example: true },
+            isActive: { type: 'boolean', example: true },
+            status: { type: 'string', example: 'approuvé' },
+            role: { type: 'string', example: 'entrepreneur' },
+          },
+        },
+        MembreGiea: {
+          type: 'object',
+          description: 'Modèle de membre GIEA stocké dans le registre des membres.',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'member@example.com' },
+            isActive: { type: 'boolean', example: true },
+            source: { type: 'string', example: 'excel' },
+          },
+        },
+        ReponseMessage: {
+          type: 'object',
+          description: 'Réponse générique renvoyant un message de confirmation.',
+          properties: {
+            message: { type: 'string', example: 'Action réalisée avec succès' },
+          },
+        },
         MembreProjet: {
           type: 'object',
           required: ['nom', 'role'],
@@ -395,6 +509,12 @@ const options = {
         bearerAuth: [],
       },
     ],
+    tags: [
+      {
+        name: 'Administration (gestion des utilisateurs et validation de compte)',
+
+      },
+    ],
   },
   apis: [
     `${__dirname}/../modules/categories/routes/*.js`,
@@ -402,6 +522,8 @@ const options = {
     `${__dirname}/../modules/gestion_projets/routes/*.js`,
     `${__dirname}/../modules/gestion_projets/docs/*.js`,
     `${__dirname}/../modules/marketplace/routes/*.js`,
+    `${__dirname}/../modules/administration/routes/*.js`,
+    `${__dirname}/../modules/administration/docs/*.js`,
     `${__dirname}/../modules/report/routes/*.js`,
     `${__dirname}/../modules/dashboard/routes/*.js`,
     `${__dirname}/../modules/notifications/routes/*.js`,

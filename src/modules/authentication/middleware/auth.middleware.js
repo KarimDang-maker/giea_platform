@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const userRepository = require('../repositories/user.repository');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
 
@@ -9,6 +10,28 @@ const authMiddleware = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await userRepository.findByEmail(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ message: 'Utilisateur introuvable' });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({ message: 'Compte désactivé' });
+    }
+
+    if (user.statusAccount === 'en_attente') {
+      return res.status(403).json({ message: 'Compte en attente d\'approbation' });
+    }
+
+    if (user.statusAccount === 'suspendu') {
+      return res.status(403).json({ message: 'Compte suspendu' });
+    }
+
+    if (user.statusAccount === 'supprimé') {
+      return res.status(403).json({ message: 'Compte supprimé' });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

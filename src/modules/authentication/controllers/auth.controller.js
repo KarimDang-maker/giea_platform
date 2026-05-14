@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { firstName, lastName, email, password, role = 'student' } = req.body;
+    const { firstName, lastName, email, password, role = 'student', adminTestMode = false } = req.body;
 
     const user = await authService.register({
       firstName,
@@ -23,6 +23,7 @@ exports.register = async (req, res) => {
       email,
       password,
       role,
+      adminTestMode,
     });
 
     // Appel de la notification sans await (non-bloquant)

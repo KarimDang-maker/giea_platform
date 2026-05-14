@@ -19,6 +19,7 @@ const db = initializeFirestore();
 
 // Routes - Modules
 const { authRoutes, userRoutes } = require('./modules/authentication/routes');
+const { adminRoutes } = require('./modules/administration/routes');
 const { projetRoutes } = require('./modules/gestion_projets/routes')
 const { categoryRoutes } = require('./modules/categories');
 const { notificationRoutes } = require('./modules/notifications');
@@ -115,7 +116,8 @@ app.use('/api/marketPlace', marketplaceRoutes);
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes); 
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 //Routes pour la gestion des projets
 app.use('/api/projet', projetRoutes);

@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/user.repository');
+const adminUserService = require('../../administration/services/adminUser.service');
 const TokenService = require('./token.service');
 const EmailService = require('./email.service');
 const User = require('../models/user.model');
@@ -13,13 +14,16 @@ class AuthService {
    */
   async register(userData) {
     try {
-      const { firstName, lastName, email, password, role = 'student' } = userData;
+      const { firstName, lastName, email, password, role = 'student', adminTestMode = false } = userData;
 
       // Check if user already exists
       const userExists = await userRepository.emailExists(email.toLowerCase());
       if (userExists) {
         throw new Error('Email already registered');
       }
+
+      const membershipStatus = await adminUserService.buildMembershipStatus(email.toLowerCase());
+      const isAdminTestRegister = role === 'admin' && adminTestMode === true;
 
       // Create new user
       const user = new User({
@@ -28,27 +32,36 @@ class AuthService {
         email: email.toLowerCase(),
         password,
         role,
+        statusAccount: isAdminTestRegister ? 'approuvé' : 'en_attente',
+        isVerified: isAdminTestRegister,
+        isGieaMember: membershipStatus.isGieaMember,
+        membershipMessage: membershipStatus.membershipMessage,
+        validatedBy: isAdminTestRegister ? 'admin-test-registration' : undefined,
+        validatedAt: isAdminTestRegister ? new Date() : undefined,
+        statusReason: isAdminTestRegister ? 'Compte admin créé en mode test via Swagger' : undefined,
       });
 
       // Save to database
       const savedUser = await userRepository.create(user);
 
-      // Generate verification token
-      const verificationToken = TokenService.generateVerificationToken();
-      const hashedToken = TokenService.hashToken(verificationToken);
-      const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      if (!isAdminTestRegister) {
+        // Generate verification token
+        const verificationToken = TokenService.generateVerificationToken();
+        const hashedToken = TokenService.hashToken(verificationToken);
+        const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-      // Update user with verification token
-      await userRepository.update(savedUser.email, {
-        emailVerificationToken: hashedToken,
-        emailVerificationExpire: tokenExpiry,
-      });
+        // Update user with verification token
+        await userRepository.update(savedUser.email, {
+          emailVerificationToken: hashedToken,
+          emailVerificationExpire: tokenExpiry,
+        });
 
-      // Send verification email (non-blocking)
-      try {
-        await EmailService.sendVerificationEmail(email, firstName, verificationToken);
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
+        // Send verification email (non-blocking)
+        try {
+          await EmailService.sendVerificationEmail(email, firstName, verificationToken);
+        } catch (emailError) {
+          console.error('Error sending verification email:', emailError);
+        }
       }
 
       return savedUser;
@@ -130,8 +143,24 @@ class AuthService {
         throw new Error('Invalid email or password');
       }
 
-      if (!user.isActive) {
-        throw new Error('Account is deactivated');
+      if (user.isActive === false) {
+        throw new Error('Compte désactivé');
+      }
+
+      if (user.statusAccount === 'en_attente') {
+        throw new Error('Compte en attente d\'approbation');
+      }
+
+      if (user.statusAccount === 'suspendu') {
+        throw new Error('Compte suspendu');
+      }
+
+      if (user.statusAccount === 'supprimé') {
+        throw new Error('Compte supprimé');
+      }
+
+      if (user.statusAccount !== 'approuvé') {
+        throw new Error('Compte non autorisé');
       }
 
       // Verify password

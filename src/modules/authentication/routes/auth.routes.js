@@ -44,6 +44,10 @@ const router = express.Router();
  *                 type: string
  *                 enum: [student, entrepreneur, company, investor, mentor, admin]
  *                 example: student
+ *               adminTestMode:
+ *                 type: boolean
+ *                 example: false
+ *                 description: "Option de test Swagger : si true et role=admin, le compte est créé directement approuvé pour permettre l'accès immédiat. À utiliser uniquement pour les tests."
  *     responses:
  *       201:
  *         description: Registration successful
