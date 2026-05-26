@@ -70,10 +70,75 @@ class AuthService {
     }
   }
 
+  async verifyEmail(email, token) {
+    try {
+      if (!email || !token) {
+        throw new Error('Email and verification token are required');
+      }
+
+      // Get user
+      const user = await userRepository.findByEmail(email.toLowerCase());
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.isVerified) {
+        throw new Error('Email already verified');
+      }
+
+      // Verify token
+      if (!TokenService.verifyHashedToken(token, user.emailVerificationToken)) {
+        throw new Error('Invalid verification token');
+      }
+
+      // Check token expiry
+      let expireTime = user.emailVerificationExpire;
+      if (expireTime && typeof expireTime.toDate === 'function') {
+        expireTime = expireTime.toDate();
+      } else if (typeof expireTime === 'string') {
+        expireTime = new Date(expireTime);
+      }
+
+      if (new Date() > new Date(expireTime)) {
+        throw new Error('Verification token has expired');
+      }
+      
+      // Si l'utilisateur est reconnu comme membre GIEA, on l'approuve directement.
+      // Sinon, il conserve son statut "en_attente" actuel pour validation manuelle.
+      const newStatusAccount = user.isGieaMember ? 'approuvé' : 'en_attente';
+      const newStatusReason = user.isGieaMember 
+        ? 'Validation automatique : Membre GIEA vérifié' 
+        : user.statusReason;
+
+      // Update user as verified and apply the status
+      const verifiedUser = await userRepository.update(user.email, {
+        isVerified: true,
+        emailVerifiedAt: new Date(),
+        emailVerificationToken: null,
+        emailVerificationExpire: null,
+        statusAccount: newStatusAccount,
+        statusReason: newStatusReason,
+      });
+      // ───────────────────────────────────────────────────────────────────────
+
+      // Send welcome email (non-blocking)
+      try {
+        await EmailService.sendWelcomeEmail(user.email, user.firstName);
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+      }
+
+      return verifiedUser;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * Verify email with token
    */
-  async verifyEmail(email, token) {
+  /*async verifyEmail(email, token) {
     try {
       if (!email || !token) {
         throw new Error('Email and verification token are required');
@@ -127,7 +192,7 @@ class AuthService {
       throw error;
     }
   }
-
+*/
   /**
    * Login user
    */

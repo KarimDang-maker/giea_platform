@@ -129,10 +129,6 @@ class AdminUserService {
   }
 
   /**
-   * Approuve ou rejette un utilisateur spécifique par ID.
-   */
-
-  /**
    * Récupère le statut d'adhésion d'un utilisateur.
    */
   async getMembershipStatus(userId) {

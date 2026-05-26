@@ -44,9 +44,17 @@ class ProjetModel {
         this.equipe = (data.equipe || []).map(m => new MembreProjetModel(m)); 
         this.documents = (data.documents || []).map(d => new DocumentProjetModel(d)); 
         this.suggestions = data.suggestions || [];
+
+        this.estPublie = data.estPublie || false;
+        this.porteurSupprime = data.porteurSupprime || false;
         
         this.createdAt = this._formatDate(data.createdAt);
         this.updatedAt = this._formatDate(data.updatedAt);
+
+        //Pour savoir quel admin a agis sur le projet
+        this.evaluatedBy = data.evaluatedBy || null;
+        this.evaluatedAt = data.evaluatedAt || null;
+        this.raisonRejet = data.raisonRejet || '';
     }
 
     static valide(data){

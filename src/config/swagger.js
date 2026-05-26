@@ -514,6 +514,22 @@ const options = {
         name: 'Administration (gestion des utilisateurs et validation de compte)',
 
       },
+      {
+        name: 'Administration (gestion des projets)',
+        description: 'Suivi, évaluation, transitions de statuts et modération des projets soumis'
+      },
+      {
+        name: 'Administration (gestion de Categories)',
+        description: 'gestion des categories et sous-categories'
+      },
+      {
+        name: 'Administration (Configuration)',
+        description: 'Gestion de la configuration globale de la plateforme',
+      },
+      {
+        name: 'Administration (Gestion des Logs)',
+        description: 'Gestion des logs d\'activité des administrateurs',
+      },
     ],
   },
   apis: [
