@@ -3,6 +3,7 @@ const { Notifications } = require('../models/notification.model');
 
 class NotificationService {
   async createNotification(data) {
+    console.log('[NotificationService] Creating in-app notification for user:', data.userId);
     const notification = new Notifications(data);
     const notificationData = {
         userId: notification.userId,
@@ -13,7 +14,9 @@ class NotificationService {
         updatedAt: notification.updatedAt
     };
     
-    return await notificationRepository.create(notificationData);
+    const result = await notificationRepository.create(notificationData);
+    console.log('[NotificationService] In-app notification created, ID:', result.id);
+    return result;
   }
 
   async getUserNotifications(userId) {

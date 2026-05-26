@@ -29,15 +29,15 @@ emailMode == "service" ? transporter = nodemailer.createTransport({
     pass:process.env.EMAIL_PASSWORD
   }
 }) : transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: parseInt(process.env.EMAIL_PORT) == 465 ? true : false,
+  host: process.env.NODE_MAILER_HOST,
+  port: process.env.NODE_MAILER_PORT,
+  secure: parseInt(process.env.NODE_MAILER_PORT) == 465 ? true : false,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    user: process.env.NODE_MAILER_EMAIL,
+    pass: process.env.NODE_MAILER_PASSWORD
   },
   tls: {
-    rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED
+    rejectUnauthorized: false
   }
 })
 
