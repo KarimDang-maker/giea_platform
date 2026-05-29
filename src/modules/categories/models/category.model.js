@@ -1,5 +1,5 @@
 class CategoryModel {
-  constructor({ id, name, description, type, subCategories = [], status = 'active', createdAt, updatedAt }) {
+  constructor({ id, name, description, type, subCategories = [], status = 'active', createdAt, updatedAt, createdBy, updatedBy, isDefault }) {
     this.id = id;
     this.name = name; // e.g., 'Project Bearer', 'Company', 'Investor'
     this.description = description || '';
@@ -8,6 +8,11 @@ class CategoryModel {
     this.status = status; // 'active', 'inactive', 'deleted'
     this.createdAt = createdAt || new Date().toISOString();
     this.updatedAt = updatedAt || new Date().toISOString();
+
+    //suivie action admin
+    this.createdBy = createdBy || null;
+    this.updatedBy = updatedBy || null;
+    this.isDefault = isDefault || false; //pour la catégorie par défaut
   }
 
   toJSON() {

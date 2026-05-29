@@ -15,7 +15,7 @@ class User {
     this.password = data.password || '';
     this.phone = data.phone || '';
     this.avatar = data.avatar || '';
-    this.role = data.role || 'entrepreneur'; // Default role
+    this.role = data.role || ['entrepreneur']; // Default role, pour permettre le cumul des roles par un utilisateur
     
     // Verification
     this.isVerified = data.isVerified || false;
@@ -59,10 +59,20 @@ class User {
     
     // Activity & Status
     this.lastLogin = data.lastLogin || null;
-    this.isActive = data.isActive !== false ? true : false;
+    this.statusAccount = data.statusAccount || 'en_attente'; // en_attente | approuvé | suspendu | supprimé
+    this.isActive = data.isActive !== undefined ? data.isActive : true;
     
     // Storage
     this.firebaseStoragePath = data.firebaseStoragePath || '';
+
+    //traçabilité admin
+    this.validatedBy = data.validatedBy || null;
+    this.statusReason = data.statusReason || '';
+    this.validatedAt = data.validatedAt || null;
+    
+    // Champs GIEA
+    this.isGieaMember = data.isGieaMember || false;
+    this.membershipMessage = data.membershipMessage || '';
     
     // Timestamps
     this.createdAt = data.createdAt || new Date();

@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/user.repository');
+const adminUserService = require('../../administration/services/adminUser.service');
 const TokenService = require('./token.service');
 const EmailService = require('./email.service');
 const User = require('../models/user.model');
@@ -13,13 +14,16 @@ class AuthService {
    */
   async register(userData) {
     try {
-      const { firstName, lastName, email, password, role = 'student' } = userData;
+      const { firstName, lastName, email, password, role = 'student', adminTestMode = false } = userData;
 
       // Check if user already exists
       const userExists = await userRepository.emailExists(email.toLowerCase());
       if (userExists) {
         throw new Error('Email already registered');
       }
+
+      const membershipStatus = await adminUserService.buildMembershipStatus(email.toLowerCase());
+      const isAdminTestRegister = role === 'admin' && adminTestMode === true;
 
       // Create new user
       const user = new User({
@@ -28,27 +32,36 @@ class AuthService {
         email: email.toLowerCase(),
         password,
         role,
+        statusAccount: isAdminTestRegister ? 'approuvé' : 'en_attente',
+        isVerified: isAdminTestRegister,
+        isGieaMember: membershipStatus.isGieaMember,
+        membershipMessage: membershipStatus.membershipMessage,
+        validatedBy: isAdminTestRegister ? 'admin-test-registration' : undefined,
+        validatedAt: isAdminTestRegister ? new Date() : undefined,
+        statusReason: isAdminTestRegister ? 'Compte admin créé en mode test via Swagger' : undefined,
       });
 
       // Save to database
       const savedUser = await userRepository.create(user);
 
-      // Generate verification token
-      const verificationToken = TokenService.generateVerificationToken();
-      const hashedToken = TokenService.hashToken(verificationToken);
-      const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      if (!isAdminTestRegister) {
+        // Generate verification token
+        const verificationToken = TokenService.generateVerificationToken();
+        const hashedToken = TokenService.hashToken(verificationToken);
+        const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-      // Update user with verification token
-      await userRepository.update(savedUser.email, {
-        emailVerificationToken: hashedToken,
-        emailVerificationExpire: tokenExpiry,
-      });
+        // Update user with verification token
+        await userRepository.update(savedUser.email, {
+          emailVerificationToken: hashedToken,
+          emailVerificationExpire: tokenExpiry,
+        });
 
-      // Send verification email (non-blocking)
-      try {
-        await EmailService.sendVerificationEmail(email, firstName, verificationToken);
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
+        // Send verification email (non-blocking)
+        try {
+          await EmailService.sendVerificationEmail(email, firstName, verificationToken);
+        } catch (emailError) {
+          console.error('Error sending verification email:', emailError);
+        }
       }
 
       return savedUser;
@@ -57,10 +70,75 @@ class AuthService {
     }
   }
 
+  async verifyEmail(email, token) {
+    try {
+      if (!email || !token) {
+        throw new Error('Email and verification token are required');
+      }
+
+      // Get user
+      const user = await userRepository.findByEmail(email.toLowerCase());
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.isVerified) {
+        throw new Error('Email already verified');
+      }
+
+      // Verify token
+      if (!TokenService.verifyHashedToken(token, user.emailVerificationToken)) {
+        throw new Error('Invalid verification token');
+      }
+
+      // Check token expiry
+      let expireTime = user.emailVerificationExpire;
+      if (expireTime && typeof expireTime.toDate === 'function') {
+        expireTime = expireTime.toDate();
+      } else if (typeof expireTime === 'string') {
+        expireTime = new Date(expireTime);
+      }
+
+      if (new Date() > new Date(expireTime)) {
+        throw new Error('Verification token has expired');
+      }
+      
+      // Si l'utilisateur est reconnu comme membre GIEA, on l'approuve directement.
+      // Sinon, il conserve son statut "en_attente" actuel pour validation manuelle.
+      const newStatusAccount = user.isGieaMember ? 'approuvé' : 'en_attente';
+      const newStatusReason = user.isGieaMember 
+        ? 'Validation automatique : Membre GIEA vérifié' 
+        : user.statusReason;
+
+      // Update user as verified and apply the status
+      const verifiedUser = await userRepository.update(user.email, {
+        isVerified: true,
+        emailVerifiedAt: new Date(),
+        emailVerificationToken: null,
+        emailVerificationExpire: null,
+        statusAccount: newStatusAccount,
+        statusReason: newStatusReason,
+      });
+      // ───────────────────────────────────────────────────────────────────────
+
+      // Send welcome email (non-blocking)
+      try {
+        await EmailService.sendWelcomeEmail(user.email, user.firstName);
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+      }
+
+      return verifiedUser;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * Verify email with token
    */
-  async verifyEmail(email, token) {
+  /*async verifyEmail(email, token) {
     try {
       if (!email || !token) {
         throw new Error('Email and verification token are required');
@@ -114,7 +192,7 @@ class AuthService {
       throw error;
     }
   }
-
+*/
   /**
    * Login user
    */
@@ -130,8 +208,24 @@ class AuthService {
         throw new Error('Invalid email or password');
       }
 
-      if (!user.isActive) {
-        throw new Error('Account is deactivated');
+      if (user.isActive === false) {
+        throw new Error('Compte désactivé');
+      }
+
+      if (user.statusAccount === 'en_attente') {
+        throw new Error('Compte en attente d\'approbation');
+      }
+
+      if (user.statusAccount === 'suspendu') {
+        throw new Error('Compte suspendu');
+      }
+
+      if (user.statusAccount === 'supprimé') {
+        throw new Error('Compte supprimé');
+      }
+
+      if (user.statusAccount !== 'approuvé') {
+        throw new Error('Compte non autorisé');
       }
 
       // Verify password

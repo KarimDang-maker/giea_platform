@@ -15,6 +15,25 @@ const authValidationRules = {
       .optional()
       .isIn(['student', 'entrepreneur', 'investor', 'mentor', 'company', 'admin'])
       .withMessage('Invalid role'),
+    body('adminTestMode')
+      .optional()
+      .isBoolean()
+      .withMessage('adminTestMode must be a boolean'),
+  ],
+
+  adminCreateUser: [
+    body('firstName').trim().notEmpty().withMessage('First name is required'),
+    body('lastName').trim().notEmpty().withMessage('Last name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password')
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/),
+    body('role')
+      .notEmpty()
+      .withMessage('Role is required')
+      .isIn(['student', 'entrepreneur', 'investor', 'mentor', 'company', 'admin'])
+      .withMessage('Invalid role'),
   ],
 
   login: [

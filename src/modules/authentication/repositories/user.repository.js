@@ -266,6 +266,14 @@ class UserRepository {
       firebaseStoragePath: user.firebaseStoragePath,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      // Champs de statut et traçabilité admin
+      statusAccount: user.statusAccount || 'en_attente',
+      validatedBy: user.validatedBy || null,
+      statusReason: user.statusReason || '',
+      validatedAt: user.validatedAt || null,
+      // Champs GIEA
+      isGieaMember: user.isGieaMember !== undefined ? user.isGieaMember : false,
+      membershipMessage: user.membershipMessage || '',
     };
   }
 }
